@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/icons.dart';
 import '../core/l10n.dart';
 import '../core/saturday_schedule.dart';
+import '../core/tokens.dart';
 import '../data/demo_data.dart';
 import '../models.dart';
 import '../widgets/app_refresh.dart';
@@ -14,15 +15,11 @@ class SaturdayScheduleScreen extends StatelessWidget {
   const SaturdayScheduleScreen({super.key});
 
   Future<void> _book(BuildContext context, Doctor doctor) async {
-    final l10n = L10n.of(context);
-    final created = await startBooking(
+    await startBooking(
       context,
       departmentId: doctor.departmentId,
       doctorId: doctor.id,
     );
-    if (created == true && context.mounted) {
-      showAppSnack(context, l10n.appointmentConfirmedSnack);
-    }
   }
 
   @override
@@ -30,17 +27,18 @@ class SaturdayScheduleScreen extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final l10n = L10n.of(context);
-    final nextSaturday = nextSaturdayFrom(DateTime.now());
+    final nextSaturday = nextBookableSaturday(DateTime.now());
     final nextGroup = saturdayGroupForDate(nextSaturday);
     final nextDoctors = saturdayDoctorsForDate(nextSaturday);
 
     return Scaffold(
       appBar: AppBar(
+        leading: const AppBackButton(),
         title: Text(l10n.saturdayScheduleTitle),
         actions: [
           IconButton(
             tooltip: l10n.viewDoctorCalendar,
-            icon: const Icon(PhosphorIconsRegular.calendarDots),
+            icon: const Icon(CoolIcons.calendarDots),
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
                 builder: (_) => const DoctorCalendarScreen(),
@@ -53,7 +51,12 @@ class SaturdayScheduleScreen extends StatelessWidget {
         onRefresh: demoRefresh,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(12, 4, 12, 40),
+          padding: const EdgeInsets.fromLTRB(
+            AppTokens.gutter,
+            4,
+            AppTokens.gutter,
+            40,
+          ),
           children: [
             Text(
               l10n.saturdaySpecialistsSubtitle,
@@ -65,13 +68,10 @@ class SaturdayScheduleScreen extends StatelessWidget {
             const SizedBox(height: 16),
             Row(
               children: [
-                _HoursChip(
-                  icon: PhosphorIconsRegular.clock,
-                  label: l10n.specialistHours,
-                ),
+                _HoursChip(icon: CoolIcons.clock, label: l10n.specialistHours),
                 const SizedBox(width: 8),
                 _HoursChip(
-                  icon: PhosphorIconsRegular.stethoscope,
+                  icon: CoolIcons.stethoscope,
                   label: l10n.mbbsOpdDaily,
                 ),
               ],
@@ -107,11 +107,7 @@ class SaturdayScheduleScreen extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  PhosphorIconsRegular.info,
-                  size: 18,
-                  color: scheme.onSurfaceVariant,
-                ),
+                Icon(CoolIcons.info, size: 18, color: scheme.onSurfaceVariant),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -202,17 +198,9 @@ class _ThisSaturdayCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      l10n.weekdayBoth(date),
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      l10n.dateBoth(date),
-                      style: theme.textTheme.titleMedium,
+                    DateText(
+                      date: date,
+                      primaryStyle: theme.textTheme.titleMedium,
                     ),
                   ],
                 ),
@@ -322,7 +310,7 @@ class _ScheduleDoctorTile extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(14),
       child: Padding(
-        padding: EdgeInsets.symmetric(vertical: compact ? 4 : 2),
+        padding: EdgeInsets.symmetric(vertical: compact ? 6 : 4),
         child: Row(
           children: [
             DoctorAvatar(doctor: doctor, size: compact ? 38 : 42),
@@ -351,7 +339,7 @@ class _ScheduleDoctorTile extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             Icon(
-              PhosphorIconsRegular.caretRight,
+              CoolIcons.caretRight,
               size: 18,
               color: scheme.onSurfaceVariant,
             ),

@@ -4,6 +4,9 @@ import '../core/l10n.dart';
 import '../core/saturday_schedule.dart';
 import '../models.dart';
 
+/// Bilingual fallback label for an appointment without a specific doctor.
+const String kClinicServiceDisplayName = 'Clinic service / क्लिनिक सेवा';
+
 const departments = <Department>[
   Department(
     id: 'opd',
@@ -11,7 +14,7 @@ const departments = <Department>[
     nameEn: 'General OPD',
     descriptionNp: 'हरेक दिन क्लिनिक खुल्ने समयभर MBBS मेडिकल अफिसरद्वारा OPD जाँच, परामर्श र प्राथमिक उपचार। अपोइन्टमेन्ट आवश्यक पर्दैन।',
     descriptionEn: 'Daily MBBS medical officer OPD for checks, consultations and primary care throughout clinic hours. No appointment needed.',
-    icon: PhosphorIconsRegular.stethoscope,
+    icon: CoolIcons.stethoscope,
     doctorIds: ['ashish'],
   ),
   Department(
@@ -20,7 +23,7 @@ const departments = <Department>[
     nameEn: 'Internal Medicine',
     descriptionNp: 'भित्री रोग विशेषज्ञसहित परामर्श — महिनाको दोस्रो शनिबार; आइत–शुक्र दिउँसो पनि उपलब्ध।',
     descriptionEn: 'Internal medicine consultation with a specialist — 2nd Saturday; also available Sunday–Friday afternoons.',
-    icon: PhosphorIconsRegular.heartbeat,
+    icon: CoolIcons.heartbeat,
     doctorIds: ['navin'],
   ),
   Department(
@@ -29,7 +32,7 @@ const departments = <Department>[
     nameEn: 'Gynecology',
     descriptionNp: 'गर्भवती जाँच, स्त्री रोग परामर्श र परिवार नियोजन — महिनाको दोस्रो शनिबार।',
     descriptionEn: 'Pregnancy checks, gynecology consultations and family planning — 2nd Saturday of the month.',
-    icon: PhosphorIconsRegular.genderFemale,
+    icon: CoolIcons.genderFemale,
     doctorIds: ['sunita'],
   ),
   Department(
@@ -38,7 +41,7 @@ const departments = <Department>[
     nameEn: 'Digital X-Ray',
     descriptionNp: 'डिजिटल एक्स-रे सेवा, दैनिक उपलब्ध।',
     descriptionEn: 'Digital X-ray service, available daily.',
-    icon: PhosphorIconsRegular.scan,
+    icon: CoolIcons.scan,
   ),
   Department(
     id: 'dental',
@@ -47,7 +50,7 @@ const departments = <Department>[
     descriptionNp: 'दाँत जाँच, सफाइ र दन्त उपचार सेवा। बिहान सिधै आउन सकिन्छ।',
     descriptionEn:
         'Dental checks, cleaning and treatment. Walk in during morning hours.',
-    icon: PhosphorIconsRegular.tooth,
+    icon: CoolIcons.tooth,
     doctorIds: ['manish'],
   ),
   Department(
@@ -57,7 +60,7 @@ const departments = <Department>[
     descriptionNp: 'रगत, पिसाब तथा अन्य नियमित परीक्षण। रिपोर्ट सोही दिन।',
     descriptionEn:
         'Blood, urine and other routine tests. Reports available the same day.',
-    icon: PhosphorIconsRegular.testTube,
+    icon: CoolIcons.testTube,
   ),
   Department(
     id: 'ent',
@@ -66,7 +69,7 @@ const departments = <Department>[
     descriptionNp:
         'नाक, कान र घाँटी सम्बन्धी जाँच तथा उपचार — महिनाको पहिलो शनिबार।',
     descriptionEn: 'Ear, nose and throat care — 1st Saturday of the month.',
-    icon: PhosphorIconsRegular.ear,
+    icon: CoolIcons.ear,
     doctorIds: ['bikas'],
   ),
   Department(
@@ -75,7 +78,7 @@ const departments = <Department>[
     nameEn: 'Mental Health',
     descriptionNp: 'मनोरोग विशेषज्ञद्वारा मानसिक स्वास्थ्य परामर्श — महिनाको अन्तिम शनिबार।',
     descriptionEn: 'Mental health consultation with a psychiatrist — last Saturday of the month.',
-    icon: PhosphorIconsRegular.brain,
+    icon: CoolIcons.brain,
     doctorIds: ['suman'],
   ),
   Department(
@@ -85,7 +88,7 @@ const departments = <Department>[
     descriptionNp:
         'छाला सम्बन्धी समस्या, एलर्जी र उपचार परामर्श — महिनाको पहिलो शनिबार।',
     descriptionEn: 'Skin problems, allergies and treatment consultation — 1st Saturday of the month.',
-    icon: PhosphorIconsRegular.sparkle,
+    icon: CoolIcons.sparkle,
     doctorIds: ['pratibha'],
   ),
   Department(
@@ -95,7 +98,7 @@ const departments = <Department>[
     descriptionNp: 'भिडियो एक्स-रे अर्थात् अल्ट्रासाउन्ड तथा एनोमली स्क्यान सेवा — महिनाको दुई पटक।',
     descriptionEn:
         'Video X-ray (ultrasound) and anomaly scans — twice every month.',
-    icon: PhosphorIconsRegular.monitor,
+    icon: CoolIcons.monitor,
   ),
   Department(
     id: 'ecg',
@@ -103,7 +106,7 @@ const departments = <Department>[
     nameEn: 'ECG',
     descriptionNp: 'मुटुको विद्युतीय गतिविधि जाँच सेवा।',
     descriptionEn: 'Heart electrical activity test.',
-    icon: PhosphorIconsRegular.waveform,
+    icon: CoolIcons.waveform,
   ),
   Department(
     id: 'echo',
@@ -113,7 +116,7 @@ const departments = <Department>[
         'इकोकार्डियोग्राफी सेवा — मुटु विशेषज्ञसहित महिनाको अन्तिम शनिबार।',
     descriptionEn:
         'Echocardiography with a cardiologist — last Saturday of the month.',
-    icon: PhosphorIconsRegular.heartbeat,
+    icon: CoolIcons.heartbeat,
     doctorIds: ['sujan'],
   ),
   Department(
@@ -122,7 +125,7 @@ const departments = <Department>[
     nameEn: 'Family Planning',
     descriptionNp: 'परिवार नियोजन साधन तथा परामर्श सेवा।',
     descriptionEn: 'Family planning methods and counselling.',
-    icon: PhosphorIconsRegular.usersThree,
+    icon: CoolIcons.usersThree,
     doctorIds: ['sunita'],
   ),
   Department(
@@ -133,7 +136,7 @@ const departments = <Department>[
         'दुखाइ र चोटपटकका लागि फिजियोथेरापी सेवा। साँझ सिधै आउन सकिन्छ।',
     descriptionEn:
         'Physiotherapy for pain and injuries. Walk in during evening hours.',
-    icon: PhosphorIconsRegular.personSimpleWalk,
+    icon: CoolIcons.personSimpleWalk,
     doctorIds: ['sarita'],
   ),
   Department(
@@ -143,7 +146,7 @@ const departments = <Department>[
     descriptionNp:
         'हाड, जोर्नी र नसा सम्बन्धी जाँच तथा उपचार — महिनाको तेस्रो शनिबार।',
     descriptionEn: 'Bone, joint and nerve care — 3rd Saturday of the month.',
-    icon: PhosphorIconsRegular.bone,
+    icon: CoolIcons.bone,
     doctorIds: ['rajan'],
   ),
   Department(
@@ -153,7 +156,7 @@ const departments = <Department>[
     descriptionNp: 'क्लिनिक खुल्ने समयभर आपत्कालीन उपचार। आपत्कालमा सिधै फोन गर्नुहोस्: ०१०-५६१६०६',
     descriptionEn:
         'Emergency care during clinic hours. For urgent help, call 010-561606.',
-    icon: PhosphorIconsRegular.siren,
+    icon: CoolIcons.siren,
   ),
   Department(
     id: 'pharmacy',
@@ -162,7 +165,7 @@ const departments = <Department>[
     descriptionNp: 'OPD नजिकै पूर्ण रूपमा उपलब्ध नैतिक फार्मेसी।',
     descriptionEn:
         'A fully stocked, ethical pharmacy right beside the OPD floor.',
-    icon: PhosphorIconsRegular.pill,
+    icon: CoolIcons.pill,
   ),
   Department(
     id: 'daycare',
@@ -170,7 +173,7 @@ const departments = <Department>[
     nameEn: 'ICU & Day Care',
     descriptionNp: 'आधुनिक उपकरण र तालिमप्राप्त नर्सिङ टिमसहितको निगरानी तथा डे केयर सेवा।',
     descriptionEn: 'Monitored care and day care with modern equipment and trained nursing staff.',
-    icon: PhosphorIconsRegular.bed,
+    icon: CoolIcons.bed,
   ),
 ];
 
@@ -426,15 +429,6 @@ int _saturdayDoctorOrder(Doctor a, Doctor b) {
   return a.id.compareTo(b.id);
 }
 
-DateTime nextSaturdayWithSchedule({DateTime? from}) {
-  var date = nextSaturdayFrom(from ?? DateTime.now());
-  for (var i = 0; i < 8; i++) {
-    if (saturdayDoctorsForDate(date).isNotEmpty) return date;
-    date = date.add(const Duration(days: 7));
-  }
-  return date;
-}
-
 const notices = <Notice>[
   Notice(
     id: 'notice-specialist',
@@ -442,6 +436,7 @@ const notices = <Notice>[
     title: 'मनोरोग र मुटु विशेषज्ञ सेवा',
     body: 'यही २०८२ जेठ ३१ गते शनिवार काठमाडौँ बाट मनोरोग विशेषज्ञ डाक्टर सुमन प्रसाद अधिकारी र सहिद गंगालाल मुटु अस्पताल बाँसबारीबाट मुटुको भिडियो अर्थात् इकोकार्डियोग्राफी गर्ने आवश्यक सामग्री सहित वरिष्ठ मुटु रोग विशेषज्ञ डाक्टर आउनुहुने हुँदा समयमै नाम टिपाउनु होला ।',
     dateLabel: '२०८२ जेठ ३१',
+    doctorId: 'suman',
   ),
   Notice(
     id: 'notice-lab',
@@ -634,6 +629,7 @@ List<AppNotification> demoNotifications() {
       bodyEn: en.appointmentReminderBody(upcoming, doctorEn),
       time: now.subtract(const Duration(hours: 2)),
       kind: 'appointment',
+      refId: 'demo-upcoming',
     ),
     AppNotification(
       id: 'notif-notice',
@@ -643,6 +639,7 @@ List<AppNotification> demoNotifications() {
       bodyEn: en.newNoticeBody,
       time: now.subtract(const Duration(days: 1, hours: 3)),
       kind: 'notice',
+      refId: 'notice-specialist',
     ),
     AppNotification(
       id: 'notif-lab',
@@ -653,11 +650,19 @@ List<AppNotification> demoNotifications() {
       time: now.subtract(const Duration(days: 2)),
       kind: 'record',
       read: true,
+      refId: 'record-cbc',
     ),
   ];
 }
 
-List<VisitRecord> demoRecords(AppLanguage language) {
+final Map<AppLanguage, List<VisitRecord>> _recordsCache = {};
+
+/// Stable per-language demo records (memoized so list identity does not change
+/// on every rebuild). Still sample data — not persisted patient records.
+List<VisitRecord> demoRecords(AppLanguage language) =>
+    _recordsCache.putIfAbsent(language, () => _buildDemoRecords(language));
+
+List<VisitRecord> _buildDemoRecords(AppLanguage language) {
   final now = DateTime.now();
   final today = DateTime(now.year, now.month, now.day);
   final lastSaturday = nextWeekday(DateTime.saturday)

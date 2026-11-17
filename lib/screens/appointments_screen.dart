@@ -5,15 +5,19 @@ import '../core/icons.dart';
 import 'package:provider/provider.dart';
 
 import '../core/l10n.dart';
+import '../core/tokens.dart';
 import '../data/demo_data.dart';
 import '../models.dart';
 import '../state/app_state.dart';
 import '../widgets/app_refresh.dart';
 import '../widgets/common.dart';
+import 'appointment_detail_screen.dart';
 import 'booking_screen.dart';
 
 class AppointmentsScreen extends StatefulWidget {
-  const AppointmentsScreen({super.key});
+  const AppointmentsScreen({super.key, this.scrollController});
+
+  final ScrollController? scrollController;
 
   @override
   State<AppointmentsScreen> createState() => _AppointmentsScreenState();
@@ -23,45 +27,18 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
   bool _showUpcoming = true;
 
   Future<void> _book() async {
-    final l10n = L10n.of(context);
     final created = await startBooking(context);
     if (created == true && mounted) {
       setState(() => _showUpcoming = true);
-      showAppSnack(context, l10n.appointmentConfirmedSnack);
     }
   }
 
-  Future<void> _cancel(Appointment appointment) async {
-    final l10n = L10n.of(context);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) {
-        final dialogL10n = L10n.of(dialogContext);
-        return AlertDialog(
-          title: Text(dialogL10n.cancelDialogTitle),
-          content: Text(
-            dialogL10n.cancelDialogBody(appointment.date, appointment.slot),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: Text(dialogL10n.keep),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              style: TextButton.styleFrom(
-                foregroundColor: Theme.of(dialogContext).colorScheme.error,
-              ),
-              child: Text(dialogL10n.cancel),
-            ),
-          ],
-        );
-      },
+  void _openDetail(Appointment appointment) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => AppointmentDetailScreen(appointmentId: appointment.id),
+      ),
     );
-
-    if (confirmed != true || !mounted) return;
-    context.read<AppState>().cancelAppointment(appointment.id);
-    showAppSnack(context, l10n.cancelDoneSnack);
   }
 
   @override
@@ -82,24 +59,26 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
             subtitle: l10n.appointmentsSubtitle,
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            padding: const EdgeInsets.symmetric(horizontal: AppTokens.gutter),
             child: SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
                 onPressed: _book,
-                icon: const Icon(PhosphorIconsRegular.plus, size: 20),
+                icon: const Icon(CoolIcons.plus, size: 20),
                 label: Text(l10n.newAppointment),
               ),
             ),
           ),
           const SizedBox(height: 16),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: _TabSwitcher(
-              showUpcoming: _showUpcoming,
-              upcomingCount: upcoming.length,
-              pastCount: past.length,
-              onChanged: (value) => setState(() => _showUpcoming = value),
+            padding: const EdgeInsets.symmetric(horizontal: AppTokens.gutter),
+            child: PillTabBar(
+              labels: [
+                '${l10n.tabUpcoming}  ${l10n.digits(upcoming.length)}',
+                '${l10n.tabPast}  ${l10n.digits(past.length)}',
+              ],
+              selectedIndex: _showUpcoming ? 0 : 1,
+              onChanged: (index) => setState(() => _showUpcoming = index == 0),
             ),
           ),
           const SizedBox(height: 8),
@@ -109,20 +88,17 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                     onRefresh: demoRefresh,
                     child: _showUpcoming
                         ? EmptyState(
-                            icon: PhosphorIconsRegular.calendarCheck,
+                            icon: CoolIcons.calendarCheck,
                             title: l10n.emptyUpcomingTitle,
                             message: l10n.emptyUpcomingMessage,
                             action: FilledButton.icon(
                               onPressed: _book,
-                              icon: const Icon(
-                                PhosphorIconsRegular.plus,
-                                size: 18,
-                              ),
+                              icon: const Icon(CoolIcons.plus, size: 18),
                               label: Text(l10n.bookSlot),
                             ),
                           )
                         : EmptyState(
-                            icon: PhosphorIconsRegular.clockCounterClockwise,
+                            icon: CoolIcons.clockCounterClockwise,
                             title: l10n.emptyPastTitle,
                             message: l10n.emptyPastMessage,
                           ),
@@ -130,16 +106,24 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                 : AppRefreshView(
                     onRefresh: demoRefresh,
                     child: ListView.separated(
+                      controller: widget.scrollController,
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(12, 12, 12, 32),
+                      padding: const EdgeInsets.fromLTRB(
+                        AppTokens.gutter,
+                        12,
+                        AppTokens.gutter,
+                        32,
+                      ),
                       itemCount: appointments.length,
                       separatorBuilder: (_, _) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
                         final appointment = appointments[index];
                         return _AppointmentCard(
                           appointment: appointment,
+                          onTap: () => _openDetail(appointment),
                           onCancel: _showUpcoming
-                              ? () => _cancel(appointment)
+                              ? () =>
+                                    cancelAppointmentFlow(context, appointment)
                               : null,
                         );
                       },
@@ -152,97 +136,15 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
   }
 }
 
-class _TabSwitcher extends StatelessWidget {
-  const _TabSwitcher({
-    required this.showUpcoming,
-    required this.upcomingCount,
-    required this.pastCount,
-    required this.onChanged,
-  });
-
-  final bool showUpcoming;
-  final int upcomingCount;
-  final int pastCount;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final l10n = L10n.of(context);
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: _Segment(
-              label: '${l10n.tabUpcoming}  ${l10n.digits(upcomingCount)}',
-              selected: showUpcoming,
-              onTap: () => onChanged(true),
-            ),
-          ),
-          Expanded(
-            child: _Segment(
-              label: '${l10n.tabPast}  ${l10n.digits(pastCount)}',
-              selected: !showUpcoming,
-              onTap: () => onChanged(false),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Segment extends StatelessWidget {
-  const _Segment({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(999),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOutCubic,
-          height: 42,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: selected ? scheme.primary : Colors.transparent,
-            borderRadius: BorderRadius.circular(999),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 13.5,
-              fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-              color: selected ? scheme.onPrimary : scheme.onSurfaceVariant,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _AppointmentCard extends StatelessWidget {
-  const _AppointmentCard({required this.appointment, this.onCancel});
+  const _AppointmentCard({
+    required this.appointment,
+    required this.onTap,
+    this.onCancel,
+  });
 
   final Appointment appointment;
+  final VoidCallback onTap;
   final VoidCallback? onCancel;
 
   @override
@@ -260,14 +162,14 @@ class _AppointmentCard extends StatelessWidget {
     final departmentName = department.displayName;
 
     final cancelled = appointment.status == AppointmentStatus.cancelled;
-    final effectiveCompleted =
+    final completed =
         appointment.status == AppointmentStatus.completed ||
         (appointment.status == AppointmentStatus.booked &&
             !appointment.isUpcoming);
 
     final (label, background, foreground) = cancelled
         ? (l10n.statusCancelled, scheme.errorContainer, scheme.onErrorContainer)
-        : effectiveCompleted
+        : completed
         ? (
             l10n.statusCompleted,
             scheme.surfaceContainerHighest,
@@ -279,7 +181,7 @@ class _AppointmentCard extends StatelessWidget {
             scheme.onPrimaryContainer,
           );
 
-    final active = !cancelled && !effectiveCompleted;
+    final active = !cancelled && !completed;
     final dateBackground = active
         ? scheme.primaryContainer
         : scheme.surfaceContainerHigh;
@@ -288,6 +190,7 @@ class _AppointmentCard extends StatelessWidget {
         : scheme.onSurfaceVariant;
 
     return AppCard(
+      onTap: onTap,
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -298,11 +201,7 @@ class _AppointmentCard extends StatelessWidget {
               if (doctor != null)
                 DoctorAvatar(doctor: doctor, size: 50)
               else
-                TonalIcon(
-                  icon: PhosphorIconsRegular.stethoscope,
-                  size: 50,
-                  iconSize: 24,
-                ),
+                TonalIcon(icon: CoolIcons.stethoscope, size: 50, iconSize: 24),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -341,57 +240,23 @@ class _AppointmentCard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
               color: dateBackground,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(AppTokens.radiusInner),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  PhosphorIconsRegular.calendarBlank,
-                  size: 17,
-                  color: dateForeground,
-                ),
+                Icon(CoolIcons.calendarBlank, size: 17, color: dateForeground),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        l10n.weekdayBoth(appointment.date),
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color: dateForeground,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 1),
-                      Text(
-                        l10n.dateBothShort(appointment.date),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: dateForeground,
-                          height: 1.4,
-                        ),
-                      ),
-                    ],
+                  child: DateText(
+                    date: appointment.date,
+                    color: dateForeground,
+                    mutedColor: dateForeground.withValues(alpha: 0.72),
+                    primaryStyle: theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                    secondaryStyle: theme.textTheme.bodySmall,
                   ),
-                ),
-                const SizedBox(width: 10),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Icon(
-                      PhosphorIconsRegular.clock,
-                      size: 15,
-                      color: dateForeground,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      l10n.appointmentTime(appointment.slot),
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        color: dateForeground,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
                 ),
               ],
             ),
@@ -424,15 +289,14 @@ class _AppointmentCard extends StatelessWidget {
                   onPressed: onCancel,
                   style: TextButton.styleFrom(
                     foregroundColor: scheme.error,
-                    minimumSize: const Size(0, 36),
+                    minimumSize: const Size(0, AppTokens.minTap),
                     padding: const EdgeInsets.symmetric(horizontal: 8),
-                    visualDensity: VisualDensity.compact,
                     textStyle: const TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  icon: const Icon(PhosphorIconsRegular.x, size: 15),
+                  icon: const Icon(CoolIcons.x, size: 15),
                   label: Text(l10n.cancelAppointment),
                 ),
               ],

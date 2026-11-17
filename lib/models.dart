@@ -182,6 +182,7 @@ class Notice {
     required this.title,
     required this.body,
     required this.dateLabel,
+    this.doctorId,
   });
 
   final String id;
@@ -189,6 +190,10 @@ class Notice {
   final String title;
   final String body;
   final String dateLabel;
+
+  /// Specialist announcement: tapping it opens a booking pre-filled for this
+  /// doctor.
+  final String? doctorId;
 }
 
 class Appointment {
@@ -228,14 +233,14 @@ class Appointment {
     return !target.isBefore(today);
   }
 
-  Appointment copyWith({AppointmentStatus? status}) {
+  Appointment copyWith({AppointmentStatus? status, DateTime? date}) {
     return Appointment(
       id: id,
       departmentId: departmentId,
       departmentName: departmentName,
       doctorId: doctorId,
       doctorName: doctorName,
-      date: date,
+      date: date ?? this.date,
       slot: slot,
       patientName: patientName,
       phone: phone,
@@ -293,6 +298,7 @@ class AppNotification {
     this.titleEn,
     this.bodyEn,
     this.read = false,
+    this.refId,
   });
 
   final String id;
@@ -303,6 +309,7 @@ class AppNotification {
   final DateTime time;
   final String kind;
   final bool read;
+  final String? refId;
 
   String displayTitle(AppLanguage language) =>
       language == AppLanguage.en ? (titleEn ?? title) : title;
@@ -310,7 +317,7 @@ class AppNotification {
   String displayBody(AppLanguage language) =>
       language == AppLanguage.en ? (bodyEn ?? body) : body;
 
-  AppNotification copyWith({bool? read}) {
+  AppNotification copyWith({bool? read, String? refId}) {
     return AppNotification(
       id: id,
       title: title,
@@ -320,6 +327,7 @@ class AppNotification {
       time: time,
       kind: kind,
       read: read ?? this.read,
+      refId: refId ?? this.refId,
     );
   }
 
@@ -332,6 +340,7 @@ class AppNotification {
     'time': time.toIso8601String(),
     'kind': kind,
     'read': read,
+    'refId': refId,
   };
 
   factory AppNotification.fromJson(Map<String, dynamic> json) {
@@ -344,6 +353,7 @@ class AppNotification {
       time: DateTime.tryParse(json['time'] as String? ?? '') ?? DateTime.now(),
       kind: json['kind'] as String? ?? 'notice',
       read: json['read'] as bool? ?? false,
+      refId: json['refId'] as String?,
     );
   }
 }

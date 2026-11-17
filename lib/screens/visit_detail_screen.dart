@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../core/icons.dart';
 
 import '../core/l10n.dart';
 import '../models.dart';
+import '../state/app_state.dart';
 import '../widgets/app_refresh.dart';
 import '../widgets/common.dart';
 
@@ -20,7 +22,10 @@ class VisitDetailScreen extends StatelessWidget {
     final isLab = record.kind == RecordKind.lab;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.reportDetails)),
+      appBar: AppBar(
+        leading: const AppBackButton(),
+        title: Text(l10n.reportDetails),
+      ),
       body: AppRefreshView(
         onRefresh: demoRefresh,
         child: ListView(
@@ -30,9 +35,7 @@ class VisitDetailScreen extends StatelessWidget {
             Row(
               children: [
                 TonalIcon(
-                  icon: isLab
-                      ? PhosphorIconsRegular.testTube
-                      : PhosphorIconsRegular.stethoscope,
+                  icon: isLab ? CoolIcons.testTube : CoolIcons.stethoscope,
                   size: 56,
                   iconSize: 26,
                 ),
@@ -49,7 +52,8 @@ class VisitDetailScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        '${l10n.date(record.date)} · ${record.doctor}',
+                        '${l10n.primaryDateText(record.date, context.watch<AppState>().datePrimary)}'
+                        ' · ${record.doctor}',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: scheme.onSurfaceVariant,
                         ),
@@ -125,7 +129,7 @@ class VisitDetailScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           TonalIcon(
-                            icon: PhosphorIconsRegular.pill,
+                            icon: CoolIcons.pill,
                             size: 38,
                             iconSize: 19,
                             background: scheme.surfaceContainerHigh,

@@ -1,12 +1,13 @@
-import 'package:bikram_sambat/bikram_sambat.dart';
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/bs_date.dart' as bs;
 import '../core/icons.dart';
 import '../core/l10n.dart';
-import '../core/nepali.dart' as np;
 import '../core/saturday_schedule.dart';
+import '../core/tokens.dart';
 import '../data/demo_data.dart';
 import '../models.dart';
 import '../state/app_state.dart';
@@ -22,15 +23,15 @@ class DoctorCalendarScreen extends StatefulWidget {
 }
 
 class _DoctorCalendarScreenState extends State<DoctorCalendarScreen> {
-  late DateTime _month = DateTime(
-    DateTime.now().year,
-    DateTime.now().month,
-  );
+  late DateTime _month = DateTime(DateTime.now().year, DateTime.now().month);
+
+  static final DateTime _minMonth = DateTime(1944, 1);
+  static final DateTime _maxMonth = DateTime(2032, 12);
 
   void _shift(int months) {
-    setState(() {
-      _month = DateTime(_month.year, _month.month + months);
-    });
+    final next = DateTime(_month.year, _month.month + months);
+    if (next.isBefore(_minMonth) || next.isAfter(_maxMonth)) return;
+    setState(() => _month = next);
   }
 
   Future<void> _showDaySheet(BuildContext context, DateTime date) async {
@@ -56,17 +57,9 @@ class _DoctorCalendarScreenState extends State<DoctorCalendarScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          l10n.weekdayBoth(date),
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            color: scheme.onSurfaceVariant,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          l10n.dateBoth(date),
-                          style: theme.textTheme.titleMedium,
+                        DateText(
+                          date: date,
+                          primaryStyle: theme.textTheme.titleMedium,
                         ),
                       ],
                     ),
@@ -98,15 +91,11 @@ class _DoctorCalendarScreenState extends State<DoctorCalendarScreen> {
   }
 
   Future<void> _book(BuildContext context, Doctor doctor) async {
-    final l10n = L10n.of(context);
-    final created = await startBooking(
+    await startBooking(
       context,
       departmentId: doctor.departmentId,
       doctorId: doctor.id,
     );
-    if (created == true && context.mounted) {
-      showAppSnack(context, l10n.appointmentConfirmedSnack);
-    }
   }
 
   @override
@@ -114,62 +103,77 @@ class _DoctorCalendarScreenState extends State<DoctorCalendarScreen> {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final l10n = L10n.of(context);
-    final isNp = !l10n.isEn;
+    final datePrimary = context.watch<AppState>().datePrimary;
+    final bsPrimary = datePrimary == DatePrimary.nepali;
     final today = dateOnly(DateTime.now());
     final bookedDates = {
       for (final appointment in context.watch<AppState>().appointments)
         if (appointment.isUpcoming) dateOnly(appointment.date),
     };
-    final nextSaturday = nextSaturdayFrom(DateTime.now());
+    final nextSaturday = nextBookableSaturday(DateTime.now());
+    final canPrev = _month.isAfter(_minMonth);
+    final canNext = _month.isBefore(_maxMonth);
 
-    final material = MaterialLocalizations.of(context);
-    final bsMonth = _month.toBikramSambat();
     final firstOffset = _month.weekday % 7; // Sunday-first grid
     final daysInMonth = DateTime(_month.year, _month.month + 1, 0).day;
+    final sundayAnchor = today.subtract(Duration(days: today.weekday % 7));
     final weekdayLabels = [
       for (var i = 0; i < 7; i++)
-        l10n.weekdayShort(DateTime(2026, 11, 15 + i)), // 2026-11-15 is a Sunday
+        l10n.weekdayShort(sundayAnchor.add(Duration(days: i))),
     ];
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.doctorCalendarTitle)),
+      appBar: AppBar(
+        leading: const AppBackButton(),
+        title: Text(l10n.doctorCalendarTitle),
+      ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(12, 4, 12, 32),
+        padding: const EdgeInsets.fromLTRB(
+          AppTokens.gutter,
+          4,
+          AppTokens.gutter,
+          32,
+        ),
         children: [
           // Gradient month header with a peek at this Saturday's doctors.
           Container(
             padding: const EdgeInsets.fromLTRB(8, 6, 8, 14),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [scheme.primary, scheme.tertiary],
+                colors: [
+                  scheme.primary,
+                  Color.lerp(scheme.primary, Colors.black, 0.18)!,
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(AppTokens.radiusCard),
             ),
             child: Column(
               children: [
                 Row(
                   children: [
                     _HeaderIconButton(
-                      icon: PhosphorIconsRegular.caretLeft,
+                      icon: CoolIcons.caretLeft,
                       tooltip: l10n.prevMonth,
-                      onPressed: () => _shift(-1),
+                      onPressed: canPrev ? () => _shift(-1) : null,
                     ),
                     Expanded(
                       child: Column(
                         children: [
                           Text(
-                            isNp
-                                ? '${bs.bsMonthNp(_month)} ${np.nepNum(bsMonth.year)}'
-                                : '${bs.bsMonthEn(_month)} ${bsMonth.year} BS',
+                            bsPrimary
+                                ? l10n.bsMonthYear(_month)
+                                : l10n.adMonthYear(_month),
                             style: theme.textTheme.titleMedium?.copyWith(
                               color: scheme.onPrimary,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
                           Text(
-                            material.formatMonthYear(_month),
+                            bsPrimary
+                                ? l10n.adMonthYear(_month)
+                                : l10n.bsMonthYear(_month),
                             style: theme.textTheme.labelSmall?.copyWith(
                               color: scheme.onPrimary.withValues(alpha: 0.85),
                             ),
@@ -178,9 +182,9 @@ class _DoctorCalendarScreenState extends State<DoctorCalendarScreen> {
                       ),
                     ),
                     _HeaderIconButton(
-                      icon: PhosphorIconsRegular.caretRight,
+                      icon: CoolIcons.caretRight,
                       tooltip: l10n.nextMonth,
-                      onPressed: () => _shift(1),
+                      onPressed: canNext ? () => _shift(1) : null,
                     ),
                   ],
                 ),
@@ -196,14 +200,14 @@ class _DoctorCalendarScreenState extends State<DoctorCalendarScreen> {
                     child: Row(
                       children: [
                         Icon(
-                          PhosphorIconsRegular.starFour,
+                          CoolIcons.starFourFill,
                           size: 14,
                           color: scheme.onPrimary.withValues(alpha: 0.9),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            '${l10n.thisSaturday} · ${bs.bsDateNpShort(nextSaturday)}',
+                            '${l10n.thisSaturday} · ${l10n.primaryDateMedium(nextSaturday, datePrimary)}',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: theme.textTheme.labelMedium?.copyWith(
@@ -212,7 +216,9 @@ class _DoctorCalendarScreenState extends State<DoctorCalendarScreen> {
                             ),
                           ),
                         ),
-                        _PeekAvatars(doctors: saturdayDoctorsForDate(nextSaturday)),
+                        _PeekAvatars(
+                          doctors: saturdayDoctorsForDate(nextSaturday),
+                        ),
                       ],
                     ),
                   ),
@@ -224,15 +230,17 @@ class _DoctorCalendarScreenState extends State<DoctorCalendarScreen> {
           // Weekday letters, Sunday-first.
           Row(
             children: [
-              for (final label in weekdayLabels)
+              for (var i = 0; i < weekdayLabels.length; i++)
                 Expanded(
                   child: Text(
-                    label,
+                    weekdayLabels[i],
                     textAlign: TextAlign.center,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.labelSmall?.copyWith(
-                      color: scheme.onSurfaceVariant,
+                      color: i == DateTime.saturday
+                          ? scheme.error
+                          : scheme.onSurfaceVariant,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -240,44 +248,36 @@ class _DoctorCalendarScreenState extends State<DoctorCalendarScreen> {
             ],
           ),
           const SizedBox(height: 8),
-          GridView.count(
-            crossAxisCount: 7,
+          GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 6,
-            crossAxisSpacing: 6,
-            childAspectRatio: 0.82,
-            children: [
-              for (var i = 0; i < firstOffset; i++) const SizedBox.shrink(),
-              for (var day = 1; day <= daysInMonth; day++)
-                _DayCell(
-                  date: DateTime(_month.year, _month.month, day),
-                  doctors: saturdayDoctorsForDate(
-                    DateTime(_month.year, _month.month, day),
-                  ),
-                  isNp: isNp,
-                  isToday: today == DateTime(_month.year, _month.month, day),
-                  isPast: DateTime(
-                    _month.year,
-                    _month.month,
-                    day,
-                  ).isBefore(today),
-                  hasAppointment: bookedDates.contains(
-                    DateTime(_month.year, _month.month, day),
-                  ),
-                  onOpenDay: (date) => _showDaySheet(context, date),
-                ),
-            ],
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 7,
+              mainAxisSpacing: 6,
+              crossAxisSpacing: 6,
+              mainAxisExtent: math.max(48.0, AppTokens.scaled(context, 56)),
+            ),
+            itemCount: firstOffset + daysInMonth,
+            itemBuilder: (context, index) {
+              if (index < firstOffset) return const SizedBox.shrink();
+              final day = index - firstOffset + 1;
+              final date = DateTime(_month.year, _month.month, day);
+              return _DayCell(
+                date: date,
+                doctors: saturdayDoctorsForDate(date),
+                bsPrimary: bsPrimary,
+                isToday: today == date,
+                isPast: date.isBefore(today),
+                hasAppointment: bookedDates.contains(date),
+                onOpenDay: (date) => _showDaySheet(context, date),
+              );
+            },
           ),
           const SizedBox(height: 14),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(
-                PhosphorIconsRegular.handTap,
-                size: 18,
-                color: scheme.onSurfaceVariant,
-              ),
+              Icon(CoolIcons.handTap, size: 18, color: scheme.onSurfaceVariant),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -315,7 +315,7 @@ class _HeaderIconButton extends StatelessWidget {
 
   final IconData icon;
   final String tooltip;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -363,7 +363,7 @@ class _DayCell extends StatelessWidget {
   const _DayCell({
     required this.date,
     required this.doctors,
-    required this.isNp,
+    required this.bsPrimary,
     required this.isToday,
     required this.isPast,
     required this.hasAppointment,
@@ -372,7 +372,7 @@ class _DayCell extends StatelessWidget {
 
   final DateTime date;
   final List<Doctor> doctors;
-  final bool isNp;
+  final bool bsPrimary;
   final bool isToday;
   final bool isPast;
   final bool hasAppointment;
@@ -382,52 +382,63 @@ class _DayCell extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final l10n = L10n.of(context);
     final hasDoctors = doctors.isNotEmpty;
     final isSaturday = date.weekday == DateTime.saturday;
 
+    // Saturdays read red throughout: a stronger tint on days with
+    // visiting specialists, a lighter one on the rest.
+    final isDark = theme.brightness == Brightness.dark;
     final Color background;
     final Color foreground;
     if (hasDoctors) {
-      background = isPast
-          ? scheme.primaryContainer.withValues(alpha: 0.45)
-          : scheme.primaryContainer;
-      foreground = scheme.onPrimaryContainer;
+      final base = scheme.errorContainer.withValues(alpha: isDark ? 0.6 : 1);
+      background = isPast ? base.withValues(alpha: base.a * 0.6) : base;
+      foreground = scheme.onErrorContainer;
     } else if (isSaturday) {
-      background = scheme.surfaceContainerHighest.withValues(alpha: 0.55);
-      foreground = scheme.onSurfaceVariant;
+      background = scheme.errorContainer.withValues(alpha: isDark ? 0.22 : 0.4);
+      foreground = scheme.error;
     } else {
       background = Colors.transparent;
       foreground = scheme.onSurface;
     }
 
-    final bigDay = isNp ? bs.bsDayNp(date) : date.day;
-    final smallDay = isNp ? date.day : bs.bsDay(date);
+    // Bikram Sambat always uses Devanagari numerals; the Gregorian date
+    // always stays in Latin numerals.
+    final bigDay = bsPrimary ? bs.bsDayNp(date) : '${date.day}';
+    final smallDay = bsPrimary ? '${date.day}' : bs.bsDayNp(date);
+    final digitColor = isToday && !isSaturday ? scheme.primary : foreground;
+    final todayRing = hasDoctors
+        ? scheme.onErrorContainer
+        : isSaturday
+        ? scheme.error
+        : scheme.primary;
 
     Widget cell = Container(
       padding: const EdgeInsets.fromLTRB(4, 5, 4, 3),
       decoration: BoxDecoration(
         color: background,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppTokens.radiusCell),
         border: isToday && !hasDoctors
-            ? Border.all(color: scheme.primary, width: 1.4)
+            ? Border.all(color: todayRing, width: 1.4)
             : null,
       ),
       child: Column(
         children: [
           Text(
-            '$bigDay',
+            bigDay,
             style: theme.textTheme.titleSmall?.copyWith(
-              color: isToday && hasDoctors ? scheme.primary : foreground,
+              color: digitColor,
               fontWeight: FontWeight.w700,
               height: 1.05,
             ),
           ),
           Text(
-            '$smallDay',
+            smallDay,
             style: theme.textTheme.labelSmall?.copyWith(
-              fontSize: 9,
+              fontSize: 10,
               height: 1.1,
-              color: isToday && hasDoctors ? scheme.primary : foreground,
+              color: digitColor.withValues(alpha: 0.66),
             ),
           ),
           const Spacer(),
@@ -451,11 +462,7 @@ class _DayCell extends StatelessWidget {
                     ],
                   )
                 : hasAppointment
-                ? Icon(
-                    PhosphorIconsRegular.calendarCheck,
-                    size: 13,
-                    color: scheme.primary,
-                  )
+                ? Icon(CoolIcons.calendarCheck, size: 13, color: scheme.primary)
                 : null,
           ),
         ],
@@ -465,20 +472,29 @@ class _DayCell extends StatelessWidget {
     if (isToday && hasDoctors) {
       cell = DecoratedBox(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: scheme.primary, width: 1.6),
+          borderRadius: BorderRadius.circular(AppTokens.radiusCell),
+          border: Border.all(color: todayRing, width: 1.6),
         ),
         child: cell,
       );
     }
 
-    final tappable = isSaturday && hasDoctors;
-    if (!tappable) return cell;
-    return InkWell(
-      onTap: () => onOpenDay(date),
-      borderRadius: BorderRadius.circular(12),
-      child: cell,
-    );
+    final tappable = isSaturday && hasDoctors && !isPast;
+    if (tappable) {
+      return Semantics(
+        button: true,
+        label: l10n.dateBoth(date),
+        child: InkWell(
+          onTap: () => onOpenDay(date),
+          borderRadius: BorderRadius.circular(AppTokens.radiusCell),
+          child: cell,
+        ),
+      );
+    }
+    if (isPast && hasDoctors) {
+      return Semantics(label: l10n.pastDateNote, child: cell);
+    }
+    return cell;
   }
 }
 
@@ -547,7 +563,7 @@ class _SheetDoctorTile extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             Icon(
-              PhosphorIconsRegular.caretRight,
+              CoolIcons.caretRight,
               size: 18,
               color: scheme.onSurfaceVariant,
             ),

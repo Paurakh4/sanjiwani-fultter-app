@@ -1,9 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
 import '../core/icons.dart';
 
 import '../core/l10n.dart';
+import '../core/tokens.dart';
+import '../state/app_state.dart';
 import 'appointments_screen.dart';
 import 'home_screen.dart';
 import 'profile_screen.dart';
@@ -18,9 +23,42 @@ class RootShell extends StatefulWidget {
 
 class _RootShellState extends State<RootShell> {
   int _index = 0;
+  final _controllers = List.generate(4, (_) => ScrollController());
+  Timer? _ticker;
+
+  @override
+  void initState() {
+    super.initState();
+    // Minute tick: refresh open/closed + today's date, and persist any
+    // appointment whose slot end has passed as completed.
+    _ticker = Timer.periodic(const Duration(seconds: 60), (_) {
+      if (!mounted) return;
+      context.read<AppState>().normalizeCompleted();
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    for (final controller in _controllers) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
 
   void _openTab(int index) {
-    if (index == _index) return;
+    if (index == _index) {
+      final controller = _controllers[index];
+      if (controller.hasClients) {
+        controller.animateTo(
+          0,
+          duration: AppTokens.motionMedium,
+          curve: AppTokens.ease,
+        );
+      }
+      return;
+    }
     setState(() => _index = index);
   }
 
@@ -47,10 +85,17 @@ class _RootShellState extends State<RootShell> {
         body: IndexedStack(
           index: _index,
           children: [
-            HomeScreen(onOpenTab: _openTab, isActive: _index == 0),
-            const AppointmentsScreen(),
-            const RecordsScreen(),
-            ProfileScreen(onOpenTab: _openTab),
+            HomeScreen(
+              onOpenTab: _openTab,
+              isActive: _index == 0,
+              scrollController: _controllers[0],
+            ),
+            AppointmentsScreen(scrollController: _controllers[1]),
+            RecordsScreen(scrollController: _controllers[2]),
+            ProfileScreen(
+              onOpenTab: _openTab,
+              scrollController: _controllers[3],
+            ),
           ],
         ),
         bottomNavigationBar: DecoratedBox(
@@ -65,23 +110,23 @@ class _RootShellState extends State<RootShell> {
             onDestinationSelected: _openTab,
             destinations: [
               NavigationDestination(
-                icon: const Icon(PhosphorIconsRegular.house),
-                selectedIcon: const Icon(PhosphorIconsFill.house),
+                icon: const Icon(CoolIcons.house),
+                selectedIcon: const Icon(CoolIcons.houseFill),
                 label: l10n.navHome,
               ),
               NavigationDestination(
-                icon: const Icon(PhosphorIconsRegular.calendarDots),
-                selectedIcon: const Icon(PhosphorIconsFill.calendarDots),
+                icon: const Icon(CoolIcons.calendarDots),
+                selectedIcon: const Icon(CoolIcons.calendarDotsFill),
                 label: l10n.navAppointments,
               ),
               NavigationDestination(
-                icon: const Icon(PhosphorIconsRegular.folderOpen),
-                selectedIcon: const Icon(PhosphorIconsFill.folderOpen),
+                icon: const Icon(CoolIcons.folderOpen),
+                selectedIcon: const Icon(CoolIcons.folderOpenFill),
                 label: l10n.navRecords,
               ),
               NavigationDestination(
-                icon: const Icon(PhosphorIconsRegular.userCircle),
-                selectedIcon: const Icon(PhosphorIconsFill.userCircle),
+                icon: const Icon(CoolIcons.userCircle),
+                selectedIcon: const Icon(CoolIcons.userCircleFill),
                 label: l10n.navProfile,
               ),
             ],

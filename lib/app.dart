@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
 import 'core/l10n.dart';
+import 'core/tokens.dart';
 import 'screens/splash_screen.dart';
 import 'state/app_state.dart';
 import 'theme.dart';
@@ -31,8 +32,8 @@ class SanjibaniApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      themeAnimationDuration: const Duration(milliseconds: 350),
-      themeAnimationCurve: Curves.easeOutCubic,
+      themeAnimationDuration: AppTokens.motionTheme,
+      themeAnimationCurve: AppTokens.ease,
       home: const SplashGate(),
     );
   }

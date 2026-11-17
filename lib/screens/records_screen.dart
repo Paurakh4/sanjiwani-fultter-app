@@ -1,16 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../core/icons.dart';
 
 import '../core/l10n.dart';
+import '../core/tokens.dart';
 import '../data/demo_data.dart';
 import '../models.dart';
+import '../state/app_state.dart';
 import '../widgets/app_refresh.dart';
+import '../widgets/app_search_field.dart';
 import '../widgets/common.dart';
 import 'visit_detail_screen.dart';
 
 class RecordsScreen extends StatefulWidget {
-  const RecordsScreen({super.key});
+  const RecordsScreen({super.key, this.scrollController});
+
+  final ScrollController? scrollController;
 
   @override
   State<RecordsScreen> createState() => _RecordsScreenState();
@@ -18,6 +24,21 @@ class RecordsScreen extends StatefulWidget {
 
 class _RecordsScreenState extends State<RecordsScreen> {
   RecordKind? _filter;
+  final _searchController = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  bool _matches(VisitRecord record, String query) {
+    return record.title.toLowerCase().contains(query) ||
+        record.department.toLowerCase().contains(query) ||
+        record.doctor.toLowerCase().contains(query) ||
+        record.summary.toLowerCase().contains(query);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,9 +47,12 @@ class _RecordsScreenState extends State<RecordsScreen> {
     final l10n = L10n.of(context);
     final records = [...demoRecords(l10n.language)]
       ..sort((a, b) => b.date.compareTo(a.date));
-    final filtered = _filter == null
-        ? records
-        : records.where((record) => record.kind == _filter).toList();
+    final query = _query.trim().toLowerCase();
+    final filtered = records.where((record) {
+      if (_filter != null && record.kind != _filter) return false;
+      if (query.isNotEmpty && !_matches(record, query)) return false;
+      return true;
+    }).toList();
 
     return SafeArea(
       bottom: false,
@@ -40,7 +64,20 @@ class _RecordsScreenState extends State<RecordsScreen> {
             subtitle: l10n.recordsSubtitle,
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            padding: const EdgeInsets.fromLTRB(
+              AppTokens.gutter,
+              0,
+              AppTokens.gutter,
+              10,
+            ),
+            child: AppSearchField(
+              controller: _searchController,
+              hint: l10n.searchRecordsHint,
+              onChanged: (value) => setState(() => _query = value),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppTokens.gutter),
             child: Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -69,16 +106,26 @@ class _RecordsScreenState extends State<RecordsScreen> {
                 ? AppRefreshEmpty(
                     onRefresh: demoRefresh,
                     child: EmptyState(
-                      icon: PhosphorIconsRegular.fileText,
-                      title: l10n.noRecordsTitle,
-                      message: l10n.noRecordsMessage,
+                      icon: CoolIcons.fileText,
+                      title: query.isNotEmpty
+                          ? l10n.noResultsTitle
+                          : l10n.noRecordsTitle,
+                      message: query.isNotEmpty
+                          ? l10n.noResultsMessage
+                          : l10n.noRecordsMessage,
                     ),
                   )
                 : AppRefreshView(
                     onRefresh: demoRefresh,
                     child: ListView.separated(
+                      controller: widget.scrollController,
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
+                      padding: const EdgeInsets.fromLTRB(
+                        AppTokens.gutter,
+                        12,
+                        AppTokens.gutter,
+                        24,
+                      ),
                       itemCount: filtered.length + 1,
                       separatorBuilder: (_, _) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
@@ -115,6 +162,7 @@ class _RecordCard extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final l10n = L10n.of(context);
+    final datePrimary = context.watch<AppState>().datePrimary;
     final isLab = record.kind == RecordKind.lab;
     return AppCard(
       padding: const EdgeInsets.all(16),
@@ -127,9 +175,7 @@ class _RecordCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           TonalIcon(
-            icon: isLab
-                ? PhosphorIconsRegular.testTube
-                : PhosphorIconsRegular.stethoscope,
+            icon: isLab ? CoolIcons.testTube : CoolIcons.stethoscope,
             background: scheme.surfaceContainerHigh,
             foreground: scheme.onSurfaceVariant,
           ),
@@ -144,16 +190,22 @@ class _RecordCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         record.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontSize: 15,
                         ),
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Text(
-                      l10n.dateMedium(record.date),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: scheme.onSurfaceVariant,
+                    Flexible(
+                      child: Text(
+                        l10n.primaryDateMedium(record.date, datePrimary),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
                       ),
                     ),
                   ],
@@ -182,10 +234,7 @@ class _RecordCard extends StatelessWidget {
           const SizedBox(width: 4),
           Padding(
             padding: const EdgeInsets.only(top: 14),
-            child: Icon(
-              PhosphorIconsRegular.caretRight,
-              color: scheme.onSurfaceVariant,
-            ),
+            child: Icon(CoolIcons.caretRight, color: scheme.onSurfaceVariant),
           ),
         ],
       ),

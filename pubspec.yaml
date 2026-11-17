@@ -1,7 +1,7 @@
 name: battar_sanjibani
 description: "Battar Sanjibani Polyclinic patient app — appointments, doctors, records and notices."
 publish_to: 'none'
-version: 1.5.0+2008
+version: 1.7.4+2016
 
 environment:
   sdk: ^3.13.7
@@ -80,12 +80,9 @@ flutter:
           weight: 600
         - asset: assets/fonts/Poppins-Bold.ttf
           weight: 700
-    - family: Phosphor
+    - family: CoolIcons
       fonts:
-        - asset: assets/fonts/Phosphor.ttf
-    - family: PhosphorFill
-      fonts:
-        - asset: assets/fonts/PhosphorFill.ttf
+        - asset: assets/fonts/CoolIcons.ttf
     - family: Inter
       fonts:
         - asset: assets/fonts/Inter-Regular.ttf

@@ -76,25 +76,9 @@ String bsDateNpShort(DateTime value) {
 
 String bsMonthNp(DateTime value) => _monthsNp[_bs(value).month - 1];
 
-String bsMonthNpShort(DateTime value) => _monthsNpShort[_bs(value).month - 1];
-
-String bsDateEn(DateTime value) {
-  final bs = _bs(value);
-  return '${bs.day} ${_monthsEn[bs.month - 1]} ${bs.year}';
-}
-
-String bsDateEnShort(DateTime value) {
-  final bs = _bs(value);
-  return '${bs.day} ${_monthsEnShort[bs.month - 1]}';
-}
-
 String bsMonthEn(DateTime value) => _monthsEn[_bs(value).month - 1];
 
 String bsMonthEnShort(DateTime value) => _monthsEnShort[_bs(value).month - 1];
-
-String bsWeekdayNp(DateTime value) => np.nepWeekday(value);
-
-String bsWeekdayNpShort(DateTime value) => np.nepWeekdayShort(value);
 
 String bsYearNp(DateTime value) => np.nepNum(_bs(value).year);
 

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import 'core/fonts.dart';
 import 'core/palette.dart';
+import 'core/tokens.dart';
 
 class BrandTokens extends ThemeExtension<BrandTokens> {
   const BrandTokens({
@@ -239,7 +240,9 @@ abstract final class AppTheme {
         margin: EdgeInsets.zero,
         color: scheme.surfaceContainerLow,
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTokens.radiusCard),
+        ),
       ),
       dividerTheme: DividerThemeData(
         color: scheme.outlineVariant,
@@ -324,23 +327,23 @@ abstract final class AppTheme {
         ),
         hintStyle: TextStyle(fontSize: 15, color: scheme.onSurfaceVariant),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(AppTokens.radiusField),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(AppTokens.radiusField),
           borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(AppTokens.radiusField),
           borderSide: BorderSide(color: strong, width: 1.6),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(AppTokens.radiusField),
           borderSide: BorderSide(color: scheme.error, width: 1.2),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(AppTokens.radiusField),
           borderSide: BorderSide(color: scheme.error, width: 1.6),
         ),
         errorStyle: TextStyle(
@@ -353,7 +356,9 @@ abstract final class AppTheme {
       dialogTheme: DialogThemeData(
         backgroundColor: scheme.surfaceContainerHigh,
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTokens.radiusOverlay),
+        ),
       ),
       bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: scheme.surfaceContainerLow,
@@ -362,7 +367,9 @@ abstract final class AppTheme {
         showDragHandle: true,
         dragHandleColor: scheme.outlineVariant,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppTokens.radiusOverlay),
+          ),
         ),
       ),
       snackBarTheme: SnackBarThemeData(
@@ -372,16 +379,18 @@ abstract final class AppTheme {
           color: scheme.onInverseSurface,
         ),
         actionTextColor: scheme.inversePrimary,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTokens.radiusInner),
+        ),
       ),
       chipTheme: ChipThemeData(
         backgroundColor: scheme.surfaceContainerHigh,
-        selectedColor: strong,
+        selectedColor: soft,
         disabledColor: scheme.surfaceContainerLow,
         side: BorderSide.none,
         showCheckmark: false,
         shape: const StadiumBorder(),
-        labelStyle: textTheme.labelMedium,
+        labelStyle: textTheme.labelMedium?.copyWith(color: onSoft),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
       segmentedButtonTheme: SegmentedButtonThemeData(
@@ -408,7 +417,9 @@ abstract final class AppTheme {
             BorderSide(color: scheme.outlineVariant),
           ),
           shape: WidgetStatePropertyAll(
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppTokens.radiusPill),
+            ),
           ),
           padding: const WidgetStatePropertyAll(
             EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -424,7 +435,9 @@ abstract final class AppTheme {
       listTileTheme: ListTileThemeData(
         iconColor: scheme.onSurfaceVariant,
         textColor: scheme.onSurface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTokens.radiusField),
+        ),
       ),
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {

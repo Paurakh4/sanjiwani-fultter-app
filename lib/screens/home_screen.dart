@@ -8,6 +8,7 @@ import '../core/clinic.dart';
 import '../core/l10n.dart';
 import '../core/launcher.dart';
 import '../core/saturday_schedule.dart';
+import '../core/tokens.dart';
 import '../data/demo_data.dart';
 import '../models.dart';
 import '../state/app_state.dart';
@@ -27,10 +28,12 @@ class HomeScreen extends StatelessWidget {
     super.key,
     required this.onOpenTab,
     required this.isActive,
+    this.scrollController,
   });
 
   final ValueChanged<int> onOpenTab;
   final bool isActive;
+  final ScrollController? scrollController;
 
   @override
   Widget build(BuildContext context) {
@@ -50,9 +53,9 @@ class HomeScreen extends StatelessWidget {
     ];
     final featuredDoctors = [
       for (final id in ['sunita', 'sujan', 'rajan', 'bikas'])
-        doctors.firstWhere((doctor) => doctor.id == id),
+        if (doctorById(id) != null) doctorById(id)!,
     ];
-    final nextSaturday = nextSaturdayFrom(now);
+    final nextSaturday = nextBookableSaturday(now);
     final nextSaturdayGroup = saturdayGroupForDate(nextSaturday);
     final nextSaturdayDoctors = saturdayDoctorsForDate(nextSaturday);
 
@@ -61,8 +64,14 @@ class HomeScreen extends StatelessWidget {
       child: AppRefreshView(
         onRefresh: demoRefresh,
         child: SingleChildScrollView(
+          controller: scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(12, 10, 12, 36),
+          padding: const EdgeInsets.fromLTRB(
+            AppTokens.gutter,
+            10,
+            AppTokens.gutter,
+            36,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -74,8 +83,15 @@ class HomeScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          l10n.todayBoth(now),
+                          l10n.primaryDateLine(now, state.datePrimary),
                           style: theme.textTheme.labelMedium?.copyWith(
+                            color: scheme.onSurface,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Text(
+                          l10n.secondaryDateLine(now, state.datePrimary),
+                          style: theme.textTheme.labelSmall?.copyWith(
                             color: scheme.onSurfaceVariant,
                           ),
                         ),
@@ -111,7 +127,7 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ),
                       tooltip: l10n.notificationsLabel,
-                      icon: const Icon(PhosphorIconsRegular.bell),
+                      icon: const Icon(CoolIcons.bellFill),
                     ),
                   ),
                 ],
@@ -120,40 +136,40 @@ class HomeScreen extends StatelessWidget {
               SectionHeader(title: l10n.noticesTitle),
               const SizedBox(height: 12),
               NoticeCarousel(notices: notices, active: isActive),
-              const SizedBox(height: 26),
+              const SizedBox(height: AppTokens.sectionGap),
               Row(
                 children: [
                   Expanded(
                     child: _QuickAction(
-                      icon: PhosphorIconsRegular.calendarPlus,
+                      icon: CoolIcons.calendarPlus,
                       label: l10n.quickBook,
                       onTap: () => _startBooking(context),
                     ),
                   ),
                   Expanded(
                     child: _QuickAction(
-                      icon: PhosphorIconsRegular.stethoscope,
+                      icon: CoolIcons.stethoscope,
                       label: l10n.quickDoctors,
                       onTap: () => _openServices(context),
                     ),
                   ),
                   Expanded(
                     child: _QuickAction(
-                      icon: PhosphorIconsRegular.fileText,
+                      icon: CoolIcons.fileText,
                       label: l10n.quickReports,
                       onTap: () => onOpenTab(2),
                     ),
                   ),
                   Expanded(
                     child: _QuickAction(
-                      icon: PhosphorIconsRegular.phoneCall,
+                      icon: CoolIcons.phoneCall,
                       label: l10n.quickContact,
                       onTap: () => _openContact(context),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: AppTokens.sectionGap),
               AppCard(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
@@ -163,7 +179,7 @@ class HomeScreen extends StatelessWidget {
                 child: Row(
                   children: [
                     TonalIcon(
-                      icon: PhosphorIconsRegular.clock,
+                      icon: CoolIcons.clock,
                       background: isOpen
                           ? scheme.primary
                           : scheme.surfaceContainerHigh,
@@ -197,9 +213,7 @@ class HomeScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            isOpen
-                                ? l10n.hoursToday(now)
-                                : l10n.nextOpening(now),
+                            isOpen ? l10n.hoursToday : l10n.nextOpening(now),
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: scheme.onSurfaceVariant,
                             ),
@@ -207,14 +221,11 @@ class HomeScreen extends StatelessWidget {
                         ],
                       ),
                     ),
-                    Icon(
-                      PhosphorIconsRegular.caretRight,
-                      color: scheme.onSurfaceVariant,
-                    ),
+                    Icon(CoolIcons.caretRight, color: scheme.onSurfaceVariant),
                   ],
                 ),
               ),
-              const SizedBox(height: 26),
+              const SizedBox(height: AppTokens.sectionGap),
               SectionHeader(
                 title: l10n.saturdaySpecialistsTitle,
                 actionLabel: l10n.viewSaturdaySchedule,
@@ -227,7 +238,7 @@ class HomeScreen extends StatelessWidget {
                 doctors: nextSaturdayDoctors,
                 onTap: () => _openSaturdaySchedule(context),
               ),
-              const SizedBox(height: 30),
+              const SizedBox(height: AppTokens.sectionGap),
               SectionHeader(
                 title: l10n.departmentsServices,
                 actionLabel: l10n.viewAll,
@@ -246,14 +257,14 @@ class HomeScreen extends StatelessWidget {
                       for (final department in featuredDepartments)
                         SizedBox(
                           width: width,
-                          height: 145,
+                          height: AppTokens.scaled(context, 145),
                           child: _DepartmentCard(department: department),
                         ),
                     ],
                   );
                 },
               ),
-              const SizedBox(height: 30),
+              const SizedBox(height: AppTokens.sectionGap),
               SectionHeader(
                 title: l10n.ourDoctors,
                 actionLabel: l10n.viewAll,
@@ -261,7 +272,7 @@ class HomeScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               SizedBox(
-                height: 258,
+                height: AppTokens.scaled(context, 258),
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: featuredDoctors.length,
@@ -274,7 +285,7 @@ class HomeScreen extends StatelessWidget {
                   },
                 ),
               ),
-              const SizedBox(height: 30),
+              const SizedBox(height: AppTokens.sectionGap),
               SectionHeader(title: l10n.contactLocation),
               const SizedBox(height: 12),
               AppCard(
@@ -286,12 +297,9 @@ class HomeScreen extends StatelessWidget {
                       child: FilledButton.icon(
                         onPressed: () => callClinic(context),
                         style: FilledButton.styleFrom(
-                          minimumSize: const Size(0, 46),
+                          minimumSize: const Size(0, AppTokens.minTap),
                         ),
-                        icon: const Icon(
-                          PhosphorIconsRegular.phoneCall,
-                          size: 18,
-                        ),
+                        icon: const Icon(CoolIcons.phoneCall, size: 18),
                         label: Text(l10n.callClinic),
                       ),
                     ),
@@ -300,12 +308,9 @@ class HomeScreen extends StatelessWidget {
                       child: OutlinedButton.icon(
                         onPressed: () => openClinicMap(context),
                         style: OutlinedButton.styleFrom(
-                          minimumSize: const Size(0, 46),
+                          minimumSize: const Size(0, AppTokens.minTap),
                         ),
-                        icon: const Icon(
-                          PhosphorIconsRegular.navigationArrow,
-                          size: 18,
-                        ),
+                        icon: const Icon(CoolIcons.navigationArrow, size: 18),
                         label: Text(l10n.directions),
                       ),
                     ),
@@ -320,12 +325,8 @@ class HomeScreen extends StatelessWidget {
   }
 
   Future<void> _startBooking(BuildContext context) async {
-    final l10n = L10n.of(context);
     final created = await startBooking(context);
     if (created == true && context.mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.appointmentConfirmedSnack)));
       onOpenTab(1);
     }
   }
@@ -368,6 +369,7 @@ class _SaturdaySpotlightCard extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final l10n = L10n.of(context);
+    final datePrimary = context.watch<AppState>().datePrimary;
 
     return AppCard(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
@@ -390,14 +392,14 @@ class _SaturdaySpotlightCard extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      l10n.digits(date.day),
+                      l10n.primaryDayShort(date, datePrimary),
                       style: theme.textTheme.titleLarge?.copyWith(
                         color: scheme.onPrimary,
                         fontSize: 21,
                       ),
                     ),
                     Text(
-                      l10n.weekdayShort(date),
+                      l10n.primaryWeekdayShort(date, datePrimary),
                       style: theme.textTheme.labelSmall?.copyWith(
                         color: scheme.onPrimary.withValues(alpha: 0.82),
                         fontWeight: FontWeight.w600,
@@ -420,8 +422,14 @@ class _SaturdaySpotlightCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      l10n.dateBoth(date),
+                      l10n.primaryDateText(date, datePrimary),
                       style: theme.textTheme.titleSmall,
+                    ),
+                    Text(
+                      l10n.secondaryDateText(date, datePrimary),
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
@@ -474,7 +482,7 @@ class _SaturdaySpotlightCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Icon(
-                    PhosphorIconsRegular.caretRight,
+                    CoolIcons.caretRight,
                     size: 17,
                     color: scheme.onSurfaceVariant,
                   ),
@@ -485,11 +493,7 @@ class _SaturdaySpotlightCard extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              Icon(
-                PhosphorIconsRegular.calendarDots,
-                size: 16,
-                color: scheme.primary,
-              ),
+              Icon(CoolIcons.calendarDots, size: 16, color: scheme.primary),
               const SizedBox(width: 6),
               Text(
                 l10n.viewSaturdaySchedule,
@@ -652,11 +656,7 @@ class _DoctorCard extends StatelessWidget {
           const Spacer(),
           Row(
             children: [
-              Icon(
-                PhosphorIconsRegular.clock,
-                size: 14,
-                color: scheme.onSurfaceVariant,
-              ),
+              Icon(CoolIcons.clock, size: 14, color: scheme.onSurfaceVariant),
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
@@ -675,22 +675,14 @@ class _DoctorCard extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: FilledButton(
-              onPressed: () async {
-                final created = await startBooking(
-                  context,
-                  departmentId: doctor.departmentId,
-                  doctorId: doctor.id,
-                );
-                if (created == true && context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(l10n.appointmentConfirmedSnack)),
-                  );
-                }
-              },
+              onPressed: () => startBooking(
+                context,
+                departmentId: doctor.departmentId,
+                doctorId: doctor.id,
+              ),
               style: FilledButton.styleFrom(
-                minimumSize: const Size(0, 40),
+                minimumSize: const Size(0, AppTokens.minTap),
                 padding: const EdgeInsets.symmetric(horizontal: 12),
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 textStyle: const TextStyle(fontSize: 13),
               ),
               child: Text(l10n.bookShort),

@@ -4,6 +4,7 @@ import '../core/icons.dart';
 
 import '../core/clinic.dart';
 import '../core/l10n.dart';
+import '../core/tokens.dart';
 import '../data/demo_data.dart';
 import '../models.dart';
 import '../widgets/app_refresh.dart';
@@ -28,12 +29,20 @@ class DepartmentDetailScreen extends StatelessWidget {
     );
 
     return Scaffold(
-      appBar: AppBar(title: Text(department.displayName)),
+      appBar: AppBar(
+        leading: const AppBackButton(),
+        title: Text(department.displayName),
+      ),
       body: AppRefreshView(
         onRefresh: demoRefresh,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(12, 4, 12, 40),
+          padding: const EdgeInsets.fromLTRB(
+            AppTokens.gutter,
+            4,
+            AppTokens.gutter,
+            40,
+          ),
           children: [
             AppCard(
               padding: const EdgeInsets.all(18),
@@ -92,7 +101,7 @@ class DepartmentDetailScreen extends StatelessWidget {
                         ),
                       ),
                       Icon(
-                        PhosphorIconsRegular.caretRight,
+                        CoolIcons.caretRight,
                         color: scheme.onSurfaceVariant,
                       ),
                     ],
@@ -108,7 +117,7 @@ class DepartmentDetailScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Icon(
-                      PhosphorIconsRegular.info,
+                      CoolIcons.info,
                       size: 20,
                       color: scheme.onSurfaceVariant,
                     ),
@@ -134,7 +143,7 @@ class DepartmentDetailScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Icon(
-                      PhosphorIconsRegular.info,
+                      CoolIcons.info,
                       size: 20,
                       color: scheme.onSurfaceVariant,
                     ),
@@ -155,16 +164,9 @@ class DepartmentDetailScreen extends StatelessWidget {
             const SizedBox(height: 28),
             if (hasSpecialist)
               FilledButton.icon(
-                onPressed: () async {
-                  final created = await startBooking(
-                    context,
-                    departmentId: department.id,
-                  );
-                  if (created == true && context.mounted) {
-                    showAppSnack(context, l10n.appointmentConfirmedSnack);
-                  }
-                },
-                icon: const Icon(PhosphorIconsRegular.calendarPlus, size: 18),
+                onPressed: () =>
+                    startBooking(context, departmentId: department.id),
+                icon: const Icon(CoolIcons.calendarPlus, size: 18),
                 label: Text(l10n.bookTime),
               ),
             const SizedBox(height: 12),

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'bs_date.dart' as bs;
+import 'app_info.dart';
 import 'nepali.dart' as np;
 import 'saturday_schedule.dart';
 
@@ -12,6 +13,10 @@ enum AppLanguage {
   const AppLanguage(this.code);
   final String code;
 }
+
+/// Which calendar system leads every date display. Bikram Sambat is the
+/// default; the patient can switch to Gregorian from Settings.
+enum DatePrimary { nepali, english }
 
 class L10n {
   const L10n(this.language);
@@ -39,10 +44,6 @@ class L10n {
       ? '${value.day} ${_monthsEn[value.month - 1]}'
       : bs.bsDateNpShort(value);
 
-  String dateShort(DateTime value) => isEn
-      ? '${_monthsShortEn[value.month - 1]} ${value.day}'
-      : bs.bsDateNpShort(value);
-
   String weekday(DateTime value) =>
       isEn ? _weekdaysEn[value.weekday % 7] : np.nepWeekday(value);
 
@@ -56,20 +57,8 @@ class L10n {
       ? '${weekday(value)}, ${_adDateLong(value)}'
       : '${np.nepWeekday(value)}, ${bs.bsDateNp(value)}';
 
-  String todayBoth(DateTime value) {
-    final ad =
-        '${_weekdaysShortEn[value.weekday % 7]}, ${value.day} '
-        '${_monthsShortEn[value.month - 1]}';
-    final nepali = '${np.nepWeekdayShort(value)}, ${bs.bsDateNpShort(value)}';
-    return isEn ? '$ad · $nepali' : '$nepali · $ad';
-  }
-
   String dateBoth(DateTime value) =>
       '${_adDateLong(value)} · ${bs.bsDateNp(value)}';
-
-  String dateBothShort(DateTime value) =>
-      '${value.day} ${_monthsShortEn[value.month - 1]} ${value.year} · '
-      '${bs.bsDateNp(value)}';
 
   String weekdayBoth(DateTime value) =>
       '${_weekdaysEn[value.weekday % 7]} / ${np.nepWeekday(value)}';
@@ -81,15 +70,45 @@ class L10n {
   String dateChipBs(DateTime value) =>
       '${np.nepWeekdayShort(value)}, ${bs.bsDateNpShort(value)}';
 
-  String relativeDay(DateTime value) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final target = DateTime(value.year, value.month, value.day);
-    final diff = target.difference(today).inDays;
-    if (diff == 0) return _t('आज', 'Today');
-    if (diff == 1) return _t('भोलि', 'Tomorrow');
-    return weekday(value);
-  }
+  // Primary / secondary date pair. Nepali dates always use Devanagari
+  // numerals; the Gregorian pair always stays in Latin numerals and English
+  // month names.
+  String npDateLine(DateTime value) =>
+      '${np.nepWeekday(value)}, ${bs.bsDateNp(value)}';
+  String enDateLine(DateTime value) =>
+      '${_weekdaysEn[value.weekday % 7]}, ${_adDateLong(value)}';
+  String npDateMedium(DateTime value) => bs.bsDateNp(value);
+  String enDateMedium(DateTime value) =>
+      '${value.day} ${_monthsShortEn[value.month - 1]} ${value.year}';
+
+  String primaryDateLine(DateTime value, DatePrimary primary) =>
+      primary == DatePrimary.nepali ? npDateLine(value) : enDateLine(value);
+  String secondaryDateLine(DateTime value, DatePrimary primary) =>
+      primary == DatePrimary.nepali ? enDateLine(value) : npDateLine(value);
+  String primaryDateText(DateTime value, DatePrimary primary) =>
+      primary == DatePrimary.nepali ? bs.bsDateNp(value) : _adDateLong(value);
+  String secondaryDateText(DateTime value, DatePrimary primary) =>
+      primary == DatePrimary.nepali ? _adDateLong(value) : bs.bsDateNp(value);
+  String primaryDateMedium(DateTime value, DatePrimary primary) =>
+      primary == DatePrimary.nepali ? npDateMedium(value) : enDateMedium(value);
+  String secondaryDateMedium(DateTime value, DatePrimary primary) =>
+      primary == DatePrimary.nepali ? enDateMedium(value) : npDateMedium(value);
+  String primaryDayShort(DateTime value, DatePrimary primary) =>
+      primary == DatePrimary.nepali
+      ? np.nepNum(bs.bsDay(value))
+      : '${value.day}';
+  String primaryWeekdayShort(DateTime value, DatePrimary primary) =>
+      primary == DatePrimary.nepali
+      ? np.nepWeekdayShort(value)
+      : _weekdaysShortEn[value.weekday % 7];
+  String primaryDateChip(DateTime value, DatePrimary primary) =>
+      primary == DatePrimary.nepali ? dateChipBs(value) : dateChipAd(value);
+  String secondaryDateChip(DateTime value, DatePrimary primary) =>
+      primary == DatePrimary.nepali ? dateChipAd(value) : dateChipBs(value);
+  String bsMonthYear(DateTime value) =>
+      '${bs.bsMonthNp(value)} ${bs.bsYearNp(value)}';
+  String adMonthYear(DateTime value) =>
+      '${_monthsEn[value.month - 1]} ${value.year}';
 
   String timeShort(String slot) {
     final parts = slot.split(':');
@@ -112,12 +131,13 @@ class L10n {
 
   String timeRange(String start, String end) {
     if (isEn) return '${time(start)} – ${time(end)}';
-    final shift = np.slotLabel(start).split(' ').first;
-    return '$shift ${timeShort(start)} – ${timeShort(end)}';
+    final startShift = np.slotLabel(start).split(' ').first;
+    final endShift = np.slotLabel(end).split(' ').first;
+    if (startShift == endShift) {
+      return '$startShift ${timeShort(start)} – ${timeShort(end)}';
+    }
+    return '${np.slotLabel(start)} – ${np.slotLabel(end)}';
   }
-
-  String appointmentTime(String slot) =>
-      isEn ? time(slot) : '${np.slotLabel(slot)} बजे';
 
   String clock(DateTime value) {
     final slot =
@@ -134,7 +154,7 @@ class L10n {
     return sameDay ? clock(value) : dateMedium(value);
   }
 
-  String hoursToday(DateTime value) => weekdayHours;
+  String get hoursToday => weekdayHours;
 
   String nextOpening(DateTime value) {
     if (value.hour < 7) {
@@ -334,7 +354,6 @@ class L10n {
     'विशेषज्ञ OPD हरेक शनिबार बिहान १०:०० – साँझ ५:०० बजेसम्म चल्छ। डाक्टरअनुसार शनिबार फरक पर्छ; उपलब्ध मिति मात्र देखाइएको छ।',
     'Specialist OPD runs every Saturday, 10:00 AM – 5:00 PM. Each doctor visits on specific Saturdays; only available dates are shown.',
   );
-  String get bookingStepTime => _t('समय', 'Time');
   String get bookingStepPatient => _t('बिरामीको विवरण', 'Patient details');
 
   String bookingDoctorNote(String availability, int fee) => _t(
@@ -345,11 +364,6 @@ class L10n {
     '$name $availability उपलब्ध हुनुहुन्छ।',
     '$name is available $availability.',
   );
-  String get bookingNoSlots => _t(
-    'यस शनिबारका लागि उपलब्ध समय सकिएको छ। कृपया अर्को शनिबार छान्नुहोस्।',
-    'No slots are left on this Saturday. Please choose another Saturday.',
-  );
-
   String get shiftMorning => _t('बिहान', 'Morning');
   String get shiftAfternoon => _t('दिउँसो', 'Afternoon');
   String get shiftEvening => _t('साँझ', 'Evening');
@@ -366,23 +380,23 @@ class L10n {
 
   String get summaryDepartment => _t('विभाग', 'Department');
   String get summaryDoctor => _t('डाक्टर', 'Doctor');
-  String get summaryDate => _t('मिति (वि.सं. / ई.सं.)', 'Date (BS / AD)');
-  String get summaryTime => _t('समय', 'Time');
+  String get summaryDate => _t('मिति', 'Date');
+  String get doctorHours => _t('डाक्टर समय', 'Doctor hours');
   String get summaryFee => _t('शुल्क', 'Fee');
   String get summaryNotSelected => _t('छानिएको छैन', 'Not selected');
   String get bookingNote => _t(
-    'भुक्तानी क्लिनिकमै गर्नुहोस्। अपोइन्टमेन्ट समयभन्दा १० मिनेट अघि आउनुहोस्।',
-    'Pay at the clinic. Please arrive 10 minutes before your appointment.',
+    'भुक्तानी क्लिनिकमै गर्नुहोस्। तोकिएको दिन क्लिनिकमा आउनुहोस्; डाक्टरको समय भित्र पालो पाउनुहुनेछ।',
+    'Pay at the clinic. Come on your chosen day and you will be seen within the doctor’s hours.',
   );
   String get confirmAppointment =>
       _t('अपोइन्टमेन्ट पुष्टि गर्नुहोस्', 'Confirm appointment');
-  String get chooseSlotSnack =>
-      _t('कृपया अपोइन्टमेन्टको समय छान्नुहोस्।', 'Please choose a time slot.');
+  String get alreadyBookedSnack => _t(
+    'यही डाक्टर र मितिको अपोइन्टमेन्ट पहिले नै छ।',
+    'You already have an appointment with this doctor on that date.',
+  );
 
   String get appointmentConfirmedTitle =>
       _t('अपोइन्टमेन्ट पुष्टि भयो', 'Appointment confirmed');
-  String get appointmentConfirmedSnack =>
-      _t('अपोइन्टमेन्ट पुष्टि भयो।', 'Appointment confirmed.');
 
   // Appointments -------------------------------------------------------------
 
@@ -414,9 +428,9 @@ class L10n {
   String get cancelAppointment => _t('रद्द', 'Cancel');
   String get cancelDialogTitle =>
       _t('अपोइन्टमेन्ट रद्द गर्ने?', 'Cancel appointment?');
-  String cancelDialogBody(DateTime value, String slot) => _t(
-    '${weekdayBoth(value)}, ${dateBoth(value)} को ${appointmentTime(slot)} को अपोइन्टमेन्ट रद्द गर्ने हो?',
-    'Cancel your appointment on ${weekdayBoth(value)}, ${dateBoth(value)} at ${appointmentTime(slot)}?',
+  String cancelDialogBody(DateTime value) => _t(
+    '${weekdayBoth(value)}, ${dateBoth(value)} को अपोइन्टमेन्ट रद्द गर्ने हो?',
+    'Cancel your appointment on ${weekdayBoth(value)}, ${dateBoth(value)}?',
   );
   String get cancelDoneSnack =>
       _t('अपोइन्टमेन्ट रद्द गरियो।', 'Appointment cancelled.');
@@ -466,6 +480,11 @@ class L10n {
   String get sectionPreferences => _t('प्राथमिकता', 'Preferences');
   String get themeTitle => _t('थिम', 'Theme');
   String get themeSubtitle => _t('एपको रङ योजना', 'App appearance');
+  String get dateDisplayTitle => _t('मिति देखाउने', 'Date display');
+  String get dateDisplaySubtitle =>
+      _t('मुख्य मिति कुन पात्रोमा देखाउने', 'Which calendar leads every date');
+  String get dateNepaliOption => _t('नेपाली (वि.सं.)', 'Nepali (BS)');
+  String get dateEnglishOption => _t('अंग्रेजी (ई.सं.)', 'English (AD)');
   String get languageTitle => _t('भाषा', 'Language');
   String get languageSubtitle =>
       _t('एपको भाषा छान्नुहोस्', 'Choose the app language');
@@ -492,11 +511,15 @@ class L10n {
   String get sectionClinic => _t('क्लिनिक', 'Clinic');
   String get contactHours => _t('सम्पर्क तथा समय', 'Contact & hours');
   String get aboutApp => _t('एपको बारेमा', 'About this app');
-  String get versionLabel => _t('संस्करण १.५.०', 'Version 1.5.0');
+  String get versionLabel =>
+      _t('संस्करण ${np.nepDigits(kAppVersion)}', 'Version $kAppVersion');
   String get demoBuildLabel =>
       _t('डेमो संस्करण — नमुना सामग्री', 'Demo build — sample content');
 
-  String get aboutVersion => _t('संस्करण १.५.० · डेमो', 'Version 1.5.0 · Demo');
+  String get aboutVersion => _t(
+    'संस्करण ${np.nepDigits(kAppVersion)} · डेमो',
+    'Version $kAppVersion · Demo',
+  );
   String get aboutBody => _t(
     'यो एप क्लिनिकका बिरामीहरूका लागि बनाइएको नमुना संस्करण हो। अपोइन्टमेन्ट, प्रोफाइल र सूचनाहरू यही फोनमा सुरक्षित रहन्छन्।',
     'This is a demo app for clinic patients. Appointments, profile and notifications are stored only on this phone.',
@@ -628,6 +651,78 @@ class L10n {
     '${weekdayBoth(value)}, ${dateBoth(value)} को अपोइन्टमेन्ट $department सेवाका लागि पुष्टि भएको छ।',
     'Your $department appointment on ${weekdayBoth(value)}, ${dateBoth(value)} is confirmed.',
   );
+
+  // v1.7.0 additions ---------------------------------------------------------
+
+  String get loading => _t('लोड हुँदैछ…', 'Loading…');
+  String get pullToRefresh => _t('तान्नुहोस् रिफ्रेस हुन्छ', 'Pull to refresh');
+  String get releaseToRefresh =>
+      _t('छोड्नुहोस् रिफ्रेस हुन्छ', 'Release to refresh');
+  String get undo => _t('पूर्ववत्', 'Undo');
+  String get restoreFailedSnack => _t(
+    'पुनर्स्थापना गर्न सकिएन — त्यो मितिमा अर्को अपोइन्टमेन्ट छ।',
+    'Could not restore — another appointment already exists on that date.',
+  );
+
+  String get appointmentDetailTitle =>
+      _t('अपोइन्टमेन्ट विवरण', 'Appointment details');
+  String get patientWord => _t('बिरामी', 'Patient');
+  String get reschedule => _t('समय सार्नुहोस्', 'Reschedule');
+  String get rescheduleTitle =>
+      _t('अपोइन्टमेन्ट सार्नुहोस्', 'Reschedule appointment');
+  String get rescheduleIntro => _t(
+    'उही डाक्टरका लागि नयाँ शनिबार छान्नुहोस्।',
+    'Pick a new Saturday with the same doctor.',
+  );
+  String get rescheduleDoneSnack =>
+      _t('अपोइन्टमेन्ट सारियो।', 'Appointment rescheduled.');
+  String get bookedLabel => _t('बुक गरिएको', 'Booked on');
+
+  String get appointmentRescheduledTitle =>
+      _t('अपोइन्टमेन्ट सारियो', 'Appointment rescheduled');
+  String appointmentRescheduledBody(DateTime value) => _t(
+    'तपाईंको अपोइन्टमेन्ट ${weekdayBoth(value)}, ${dateBoth(value)} मा सारिएको छ।',
+    'Your appointment was moved to ${weekdayBoth(value)}, ${dateBoth(value)}.',
+  );
+
+  String get discardTitle => _t('परिवर्तन रद्द गर्ने?', 'Discard changes?');
+  String get discardBody => _t(
+    'तपाईंका परिवर्तनहरू सुरक्षित भएका छैनन्। नसुरक्षी बाहिर निस्कने हो?',
+    'You have unsaved changes. Leave without saving?',
+  );
+  String get discardChanges => _t('रद्द गर्नुहोस्', 'Discard');
+  String get keepEditing => _t('सम्पादन जारी', 'Keep editing');
+
+  String get bookingNoDates => _t(
+    'यो डाक्टरका लागि आगामी शनिबार उपलब्ध छैन। मासिक तालिका हेर्नुहोस्।',
+    'No upcoming Saturdays for this doctor. Check the monthly schedule.',
+  );
+  String get bookingDateUnavailable => _t(
+    'यो मितिमा बुकिङ उपलब्ध छैन।',
+    'This date is not available for booking.',
+  );
+  String get pastDateNote => _t('विगतको मिति', 'Past date');
+
+  String noticePageOf(int index, int total) =>
+      _t('सूचना ${digits(index)}/${digits(total)}', 'Notice $index of $total');
+  String get pauseNotices => _t('सूचना रोक्नुहोस्', 'Pause notices');
+  String get playNotices => _t('सूचना चलाउनुहोस्', 'Play notices');
+  String get unread => _t('नपढिएको', 'Unread');
+
+  String get searchHint => _t('खोज्नुहोस्…', 'Search…');
+  String get searchDoctorsHint => _t('डाक्टर खोज्नुहोस्…', 'Search doctors…');
+  String get searchRecordsHint => _t('रेकर्ड खोज्नुहोस्…', 'Search records…');
+  String get clearSearch => _t('खोज खाली गर्नुहोस्', 'Clear search');
+  String get noResultsTitle => _t('कुनै नतिजा भेटिएन', 'No matches');
+  String get noResultsMessage => _t(
+    'अर्को नाम वा शब्द प्रयास गर्नुहोस्।',
+    'Try a different name or keyword.',
+  );
+
+  String bloodGroupDisplay(String value) {
+    if (!isEn) return value;
+    return value == 'थाहा छैन' ? 'Unknown' : value;
+  }
 }
 
 const _monthsEn = [

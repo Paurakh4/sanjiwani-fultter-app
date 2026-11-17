@@ -4,6 +4,7 @@ import '../core/icons.dart';
 
 import '../core/clinic.dart';
 import '../core/l10n.dart';
+import '../core/tokens.dart';
 import '../data/demo_data.dart';
 import '../models.dart';
 import '../widgets/app_refresh.dart';
@@ -25,12 +26,20 @@ class DoctorDetailScreen extends StatelessWidget {
     final department = departmentById(doctor.departmentId);
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.doctorDetails)),
+      appBar: AppBar(
+        leading: const AppBackButton(),
+        title: Text(l10n.doctorDetails),
+      ),
       body: AppRefreshView(
         onRefresh: demoRefresh,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(12, 4, 12, 40),
+          padding: const EdgeInsets.fromLTRB(
+            AppTokens.gutter,
+            4,
+            AppTokens.gutter,
+            40,
+          ),
           children: [
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -90,25 +99,25 @@ class DoctorDetailScreen extends StatelessWidget {
               child: Column(
                 children: [
                   _InfoRow(
-                    icon: PhosphorIconsRegular.stethoscope,
+                    icon: CoolIcons.stethoscope,
                     label: l10n.departmentLabel,
                     value: department.displayName,
                   ),
                   const SizedBox(height: 14),
                   _InfoRow(
-                    icon: PhosphorIconsRegular.clock,
+                    icon: CoolIcons.clock,
                     label: l10n.availabilityLabel,
                     value: doctor.availability(language),
                   ),
                   const SizedBox(height: 14),
                   _InfoRow(
-                    icon: PhosphorIconsRegular.wallet,
+                    icon: CoolIcons.wallet,
                     label: l10n.consultationFee,
                     value: l10n.money(doctor.fee),
                   ),
                   const SizedBox(height: 14),
                   _InfoRow(
-                    icon: PhosphorIconsRegular.mapPin,
+                    icon: CoolIcons.mapPin,
                     label: l10n.locationLabel,
                     value: Clinic.address(language),
                   ),
@@ -130,10 +139,9 @@ class DoctorDetailScreen extends StatelessWidget {
                       horizontal: 10,
                       vertical: 4,
                     ),
-                    minimumSize: const Size(0, 36),
-                    visualDensity: VisualDensity.compact,
+                    minimumSize: const Size(0, AppTokens.minTap),
                   ),
-                  icon: const Icon(PhosphorIconsRegular.calendarDots, size: 17),
+                  icon: const Icon(CoolIcons.calendarDots, size: 17),
                   label: Text(l10n.viewSaturdaySchedule),
                 ),
               ),
@@ -153,7 +161,7 @@ class DoctorDetailScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Icon(
-                      PhosphorIconsRegular.megaphone,
+                      CoolIcons.megaphone,
                       size: 20,
                       color: scheme.onSecondaryContainer,
                     ),
@@ -174,17 +182,12 @@ class DoctorDetailScreen extends StatelessWidget {
             const SizedBox(height: 28),
             if (doctor.isSpecialist) ...[
               FilledButton.icon(
-                onPressed: () async {
-                  final created = await startBooking(
-                    context,
-                    departmentId: doctor.departmentId,
-                    doctorId: doctor.id,
-                  );
-                  if (created == true && context.mounted) {
-                    showAppSnack(context, l10n.appointmentConfirmedSnack);
-                  }
-                },
-                icon: const Icon(PhosphorIconsRegular.calendarPlus, size: 18),
+                onPressed: () => startBooking(
+                  context,
+                  departmentId: doctor.departmentId,
+                  doctorId: doctor.id,
+                ),
+                icon: const Icon(CoolIcons.calendarPlus, size: 18),
                 label: Text(l10n.bookAppointment),
               ),
               const SizedBox(height: 10),
@@ -202,7 +205,7 @@ class DoctorDetailScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Icon(
-                      PhosphorIconsRegular.info,
+                      CoolIcons.info,
                       size: 20,
                       color: scheme.onSurfaceVariant,
                     ),
@@ -246,8 +249,8 @@ class _InfoRow extends StatelessWidget {
       children: [
         Icon(icon, size: 19, color: scheme.onSurfaceVariant),
         const SizedBox(width: 12),
-        SizedBox(
-          width: 112,
+        Expanded(
+          flex: 2,
           child: Text(
             label,
             style: theme.textTheme.bodySmall?.copyWith(
@@ -255,7 +258,9 @@ class _InfoRow extends StatelessWidget {
             ),
           ),
         ),
+        const SizedBox(width: 12),
         Expanded(
+          flex: 3,
           child: Text(
             value,
             style: theme.textTheme.bodyMedium?.copyWith(

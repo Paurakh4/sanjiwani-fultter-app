@@ -5,6 +5,7 @@ import '../core/icons.dart';
 import '../core/clinic.dart';
 import '../core/l10n.dart';
 import '../core/launcher.dart';
+import '../core/tokens.dart';
 import '../widgets/app_refresh.dart';
 import '../widgets/common.dart';
 import 'saturday_schedule_screen.dart';
@@ -23,12 +24,20 @@ class ContactScreen extends StatelessWidget {
     final isSaturday = now.weekday == DateTime.saturday;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.contactTitle)),
+      appBar: AppBar(
+        leading: const AppBackButton(),
+        title: Text(l10n.contactTitle),
+      ),
       body: AppRefreshView(
         onRefresh: demoRefresh,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 40),
+          padding: const EdgeInsets.fromLTRB(
+            AppTokens.gutter,
+            8,
+            AppTokens.gutter,
+            40,
+          ),
           children: [
             const Center(child: AppWordmark(height: 68)),
             const SizedBox(height: 16),
@@ -82,9 +91,9 @@ class ContactScreen extends StatelessWidget {
                   children: [
                     SizedBox(
                       width: width,
-                      height: 112,
+                      height: AppTokens.scaled(context, 112),
                       child: _ContactAction(
-                        icon: PhosphorIconsRegular.phoneCall,
+                        icon: CoolIcons.phoneCall,
                         label: l10n.contactCall,
                         detail: l10n.digits(Clinic.phonePrimaryDisplay),
                         accent: true,
@@ -93,9 +102,9 @@ class ContactScreen extends StatelessWidget {
                     ),
                     SizedBox(
                       width: width,
-                      height: 112,
+                      height: AppTokens.scaled(context, 112),
                       child: _ContactAction(
-                        icon: PhosphorIconsRegular.whatsappLogo,
+                        icon: CoolIcons.whatsappLogo,
                         label: l10n.contactWhatsapp,
                         detail: l10n.digits(Clinic.whatsappDisplay),
                         onTap: () => messageClinic(context),
@@ -103,9 +112,9 @@ class ContactScreen extends StatelessWidget {
                     ),
                     SizedBox(
                       width: width,
-                      height: 112,
+                      height: AppTokens.scaled(context, 112),
                       child: _ContactAction(
-                        icon: PhosphorIconsRegular.envelopeSimple,
+                        icon: CoolIcons.envelopeSimple,
                         label: l10n.contactEmail,
                         detail: l10n.contactSendEmail,
                         onTap: () => emailClinic(context),
@@ -113,9 +122,9 @@ class ContactScreen extends StatelessWidget {
                     ),
                     SizedBox(
                       width: width,
-                      height: 112,
+                      height: AppTokens.scaled(context, 112),
                       child: _ContactAction(
-                        icon: PhosphorIconsRegular.mapPin,
+                        icon: CoolIcons.mapPin,
                         label: l10n.contactMap,
                         detail: l10n.contactOpenMap,
                         onTap: () => openClinicMap(context),
@@ -160,10 +169,9 @@ class ContactScreen extends StatelessWidget {
                     horizontal: 10,
                     vertical: 4,
                   ),
-                  minimumSize: const Size(0, 36),
-                  visualDensity: VisualDensity.compact,
+                  minimumSize: const Size(0, AppTokens.minTap),
                 ),
-                icon: const Icon(PhosphorIconsRegular.calendarDots, size: 17),
+                icon: const Icon(CoolIcons.calendarDots, size: 17),
                 label: Text(l10n.viewSaturdaySchedule),
               ),
             ),
@@ -175,37 +183,37 @@ class ContactScreen extends StatelessWidget {
               child: Column(
                 children: [
                   _ContactRow(
-                    icon: PhosphorIconsRegular.phone,
+                    icon: CoolIcons.phone,
                     value:
                         '${l10n.digits(Clinic.phonePrimaryDisplay)} ${l10n.phoneClinicSuffix}',
                   ),
                   const SizedBox(height: 14),
                   _ContactRow(
-                    icon: PhosphorIconsRegular.deviceMobile,
+                    icon: CoolIcons.deviceMobile,
                     value:
                         '${l10n.digits(Clinic.phoneMobileDisplay)} ${l10n.phoneMobileSuffix}',
                   ),
                   const SizedBox(height: 14),
                   _ContactRow(
-                    icon: PhosphorIconsRegular.whatsappLogo,
+                    icon: CoolIcons.whatsappLogo,
                     value:
                         '${l10n.digits(Clinic.whatsappDisplay)} ${l10n.contactWhatsapp}',
                   ),
                   const SizedBox(height: 14),
                   _ContactRow(
-                    icon: PhosphorIconsRegular.envelopeSimple,
+                    icon: CoolIcons.envelopeSimple,
                     value: Clinic.email,
                     onTap: () => emailClinic(context),
                   ),
                   const SizedBox(height: 14),
                   _ContactRow(
-                    icon: PhosphorIconsRegular.globe,
+                    icon: CoolIcons.globe,
                     value: Clinic.website,
                     onTap: () => openClinicWebsite(context),
                   ),
                   const SizedBox(height: 14),
                   _ContactRow(
-                    icon: PhosphorIconsRegular.mapPin,
+                    icon: CoolIcons.mapPin,
                     value: Clinic.address(language),
                     onTap: () => openClinicMap(context),
                   ),
@@ -301,9 +309,10 @@ class _HoursRow extends StatelessWidget {
     final scheme = theme.colorScheme;
     final color = highlighted ? scheme.secondary : scheme.onSurface;
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(
-          width: 100,
+        Expanded(
+          flex: 2,
           child: Text(
             label,
             style: theme.textTheme.bodyMedium?.copyWith(
@@ -312,7 +321,9 @@ class _HoursRow extends StatelessWidget {
             ),
           ),
         ),
+        const SizedBox(width: 12),
         Expanded(
+          flex: 3,
           child: Text(
             value,
             style: theme.textTheme.bodyMedium?.copyWith(
@@ -344,11 +355,7 @@ class _ContactRow extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(child: Text(value, style: theme.textTheme.bodyMedium)),
         if (onTap != null)
-          Icon(
-            PhosphorIconsRegular.caretRight,
-            size: 16,
-            color: scheme.onSurfaceVariant,
-          ),
+          Icon(CoolIcons.caretRight, size: 16, color: scheme.onSurfaceVariant),
       ],
     );
     if (onTap == null) return content;
@@ -356,7 +363,7 @@ class _ContactRow extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(10),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 2),
+        padding: const EdgeInsets.symmetric(vertical: 14),
         child: content,
       ),
     );

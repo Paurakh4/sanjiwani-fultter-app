@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
-
-import '../core/icons.dart';
-
 import 'package:provider/provider.dart';
 
-import '../core/clinic.dart';
+import '../core/icons.dart';
 import '../core/l10n.dart';
 import '../core/saturday_schedule.dart';
+import '../core/slot_availability.dart';
+import '../core/tokens.dart';
 import '../data/demo_data.dart';
 import '../models.dart';
 import '../state/app_state.dart';
 import '../widgets/app_loading.dart';
 import '../widgets/app_refresh.dart';
+import '../widgets/booking_pickers.dart';
 import '../widgets/common.dart';
 import 'saturday_schedule_screen.dart';
 
@@ -19,12 +19,14 @@ Future<bool?> startBooking(
   BuildContext context, {
   String? departmentId,
   String? doctorId,
+  DateTime? initialDate,
 }) {
   return Navigator.of(context).push<bool>(
     MaterialPageRoute<bool>(
       builder: (_) => BookingScreen(
         initialDepartmentId: departmentId,
         initialDoctorId: doctorId,
+        initialDate: initialDate,
       ),
     ),
   );
@@ -35,28 +37,32 @@ class BookingScreen extends StatefulWidget {
     super.key,
     this.initialDepartmentId,
     this.initialDoctorId,
+    this.initialDate,
   });
 
   final String? initialDepartmentId;
   final String? initialDoctorId;
+  final DateTime? initialDate;
 
   @override
   State<BookingScreen> createState() => _BookingScreenState();
 }
 
 class _BookingScreenState extends State<BookingScreen> {
-  static const _dateChipWidth = 122.0;
-  static const _dateChipGap = 8.0;
-
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
   late final TextEditingController _phoneController;
   late final ScrollController _dateController;
+  late final String _initialName;
+  late final String _initialPhone;
   late Department _department;
   late Doctor _doctor;
   late DateTime _date;
-  String? _slot;
+  late final DateTime _initialDate;
+  late final String _initialDoctorId;
+  late final String _initialDepartmentId;
   bool _submitting = false;
+  bool _done = false;
 
   late final List<DateTime> _dates;
 
@@ -66,26 +72,36 @@ class _BookingScreenState extends State<BookingScreen> {
     final state = context.read<AppState>();
 
     final requested = departmentByIdOrNull(widget.initialDepartmentId);
+    Doctor? initialDoctor;
     if (requested != null &&
         bookableDepartments.any((item) => item.id == requested.id)) {
-      _department = requested;
-      _doctor = _doctorFor(_department, widget.initialDoctorId);
+      initialDoctor = _doctorFor(requested, widget.initialDoctorId);
     } else {
       final nextDoctors = saturdayDoctorsForDate(
-        nextSaturdayFrom(DateTime.now()),
+        nextBookableSaturday(DateTime.now()),
       );
-      final defaultDoctor = nextDoctors.isEmpty ? null : nextDoctors.first;
-      _department = defaultDoctor == null
-          ? bookableDepartments.first
-          : departmentById(defaultDoctor.departmentId);
-      _doctor = defaultDoctor ?? _doctorFor(_department);
+      initialDoctor = nextDoctors.isEmpty ? null : nextDoctors.first;
     }
+    _doctor = initialDoctor ?? specialistDoctors.first;
+    _department = departmentById(_doctor.departmentId);
 
     _dates = _upcomingSaturdays(8);
-    _date = _findFirstBookableDate(_doctor);
+    final requestedDate = widget.initialDate;
+    if (requestedDate != null &&
+        _dates.any((date) => _sameDay(date, requestedDate)) &&
+        _selectable(dateOnly(requestedDate))) {
+      _date = dateOnly(requestedDate);
+    } else {
+      _date = _findFirstBookableDate(_doctor);
+    }
+    _initialDate = _date;
+    _initialDoctorId = _doctor.id;
+    _initialDepartmentId = _department.id;
     _dateController = ScrollController();
-    _nameController = TextEditingController(text: state.profile.name);
-    _phoneController = TextEditingController(text: state.profile.phone);
+    _initialName = state.profile.name;
+    _initialPhone = state.profile.phone;
+    _nameController = TextEditingController(text: _initialName);
+    _phoneController = TextEditingController(text: _initialPhone);
     _scrollToSelectedDate(animate: false);
   }
 
@@ -97,18 +113,20 @@ class _BookingScreenState extends State<BookingScreen> {
     super.dispose();
   }
 
+  bool get _dirty =>
+      !_done &&
+      (_nameController.text != _initialName ||
+          _phoneController.text != _initialPhone ||
+          !_sameDay(_date, _initialDate) ||
+          _doctor.id != _initialDoctorId ||
+          _department.id != _initialDepartmentId);
+
   List<DateTime> _upcomingSaturdays(int count) {
-    final now = DateTime.now();
-    var candidate = DateTime(now.year, now.month, now.day);
-    while (candidate.weekday != DateTime.saturday) {
-      candidate = candidate.add(const Duration(days: 1));
-    }
-    return [
-      for (var i = 0; i < count; i++) candidate.add(Duration(days: 7 * i)),
-    ];
+    final start = nextBookableSaturday(DateTime.now());
+    return [for (var i = 0; i < count; i++) start.add(Duration(days: 7 * i))];
   }
 
-  Doctor _doctorFor(Department department, [String? preferredId]) {
+  Doctor? _doctorFor(Department department, [String? preferredId]) {
     final candidates = doctorsForDepartment(department.id)
         .where((doctor) => doctor.isSpecialist)
         .toList();
@@ -117,7 +135,7 @@ class _BookingScreenState extends State<BookingScreen> {
         if (doctor.id == preferredId) return doctor;
       }
     }
-    return candidates.first;
+    return candidates.isEmpty ? null : candidates.first;
   }
 
   List<DateTime> get _doctorDates => [
@@ -130,15 +148,15 @@ class _BookingScreenState extends State<BookingScreen> {
       if (!mounted || !_dateController.hasClients) return;
       final index = _doctorDates.indexWhere((date) => _sameDay(date, _date));
       if (index < 0) return;
-      final target = (index * (_dateChipWidth + _dateChipGap)).clamp(
+      final target = (index * (kDateChipWidth + kDateChipGap)).clamp(
         0.0,
         _dateController.position.maxScrollExtent,
       );
       if (animate) {
         _dateController.animateTo(
           target,
-          duration: const Duration(milliseconds: 280),
-          curve: Curves.easeOutCubic,
+          duration: AppTokens.motionMedium,
+          curve: AppTokens.ease,
         );
       } else {
         _dateController.jumpTo(target);
@@ -146,73 +164,33 @@ class _BookingScreenState extends State<BookingScreen> {
     });
   }
 
+  bool _selectable(DateTime date, [Doctor? doctor]) {
+    final target = doctor ?? _doctor;
+    return isDateBookable(doctor: target, date: date) &&
+        !hasBookingOn(
+          appointments: context.read<AppState>().appointments,
+          doctorId: target.id,
+          date: date,
+        );
+  }
+
   DateTime _findFirstBookableDate(Doctor doctor) {
-    DateTime? firstScheduled;
     for (final candidate in _dates) {
-      if (!doctorScheduledOn(doctor, candidate)) continue;
-      firstScheduled ??= candidate;
-      if (_hasAnyAvailableSlot(doctor, candidate)) return candidate;
+      if (_selectable(candidate, doctor)) return candidate;
     }
-    return firstScheduled ?? _dates.first;
-  }
-
-  bool _hasAnyAvailableSlot(Doctor doctor, DateTime date) {
-    if (!doctorScheduledOn(doctor, date)) return false;
-    for (final shift in SlotShift.values) {
-      if (!doctor.shifts.contains(shift)) continue;
-      for (final slot in clinicSlots[shift] ?? const <String>[]) {
-        if (_isSlotAvailableFor(doctor, date, slot)) return true;
-      }
+    for (final candidate in _dates) {
+      if (doctorScheduledOn(doctor, candidate)) return candidate;
     }
-    return false;
-  }
-
-  bool _isToday(DateTime date) {
-    final now = DateTime.now();
-    return date.year == now.year &&
-        date.month == now.month &&
-        date.day == now.day;
-  }
-
-  bool _isSlotAvailable(String slot) =>
-      _isSlotAvailableFor(_doctor, _date, slot);
-
-  bool _isSlotAvailableFor(Doctor doctor, DateTime date, String slot) {
-    if (!doctorScheduledOn(doctor, date)) return false;
-    final parts = slot.split(':');
-    final hour = int.parse(parts[0]);
-    final minute = int.parse(parts[1]);
-    if (hour >= Clinic.closeHour) return false;
-
-    if (doctor.startTime != null && slot.compareTo(doctor.startTime!) < 0) {
-      return false;
-    }
-    if (doctor.endTime != null && slot.compareTo(doctor.endTime!) >= 0) {
-      return false;
-    }
-
-    if (_isToday(date)) {
-      final now = DateTime.now();
-      final slotTime = DateTime(date.year, date.month, date.day, hour, minute);
-      if (slotTime.isBefore(now.add(const Duration(minutes: 30)))) {
-        return false;
-      }
-    }
-
-    final seed = '${doctor.id}-${date.year}-${date.month}-${date.day}-$slot';
-    var hash = 7;
-    for (final code in seed.codeUnits) {
-      hash = (hash * 31 + code) & 0x7fffffff;
-    }
-    return hash % 6 != 0;
+    return _dates.first;
   }
 
   void _selectDepartment(Department department) {
+    final doctor = _doctorFor(department);
+    if (doctor == null) return;
     setState(() {
       _department = department;
-      _doctor = _doctorFor(department);
-      _slot = null;
-      if (!_hasAnyAvailableSlot(_doctor, _date)) {
+      _doctor = doctor;
+      if (!_selectable(_date)) {
         _date = _findFirstBookableDate(_doctor);
         _scrollToSelectedDate();
       }
@@ -220,55 +198,71 @@ class _BookingScreenState extends State<BookingScreen> {
   }
 
   void _selectDate(DateTime date) {
-    if (!_hasAnyAvailableSlot(_doctor, date)) return;
-    setState(() {
-      _date = date;
-      _slot = null;
-    });
+    if (!_selectable(date)) return;
+    setState(() => _date = date);
   }
 
   void _selectDoctor(Doctor doctor) {
     setState(() {
       _doctor = doctor;
-      _slot = null;
-      if (!_hasAnyAvailableSlot(doctor, _date)) {
+      if (!_selectable(_date, doctor)) {
         _date = _findFirstBookableDate(doctor);
         _scrollToSelectedDate();
       }
     });
   }
 
+  String? get _doctorHours {
+    final start = _doctor.startTime;
+    final end = _doctor.endTime;
+    if (start == null || end == null) return null;
+    return L10n.of(context).timeRange(start, end);
+  }
+
   Future<void> _submit() async {
     if (_submitting) return;
     final l10n = L10n.of(context);
     FocusScope.of(context).unfocus();
-    if (_slot == null) {
-      showAppSnack(context, l10n.chooseSlotSnack);
-      return;
-    }
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _submitting = true);
     final state = context.read<AppState>();
-    late final Appointment appointment;
+    if (!_selectable(_date)) {
+      showAppSnack(context, l10n.alreadyBookedSnack);
+      return;
+    }
+
+    setState(() => _submitting = true);
+    Appointment? appointment;
     try {
-      appointment = await runWithLogoLoading(context, () async {
-        await Future<void>.delayed(const Duration(milliseconds: 250));
-        return state.bookAppointment(
-          department: _department,
-          doctor: _doctor,
-          date: _date,
-          slot: _slot!,
-          patientName: _nameController.text,
-          phone: _phoneController.text,
-        );
-      });
+      appointment = await runWithLogoLoading<Appointment?>(
+        context,
+        () async {
+          await Future<void>.delayed(const Duration(milliseconds: 250));
+          return state.bookAppointment(
+            department: _department,
+            doctor: _doctor,
+            date: _date,
+            patientName: _nameController.text,
+            phone: _phoneController.text,
+          );
+        },
+        minimum: const Duration(milliseconds: 1200),
+        barrierLabel: l10n.loading,
+      );
     } catch (_) {
       if (mounted) setState(() => _submitting = false);
       rethrow;
     }
 
     if (!mounted) return;
+    if (appointment == null) {
+      setState(() => _submitting = false);
+      showAppSnack(context, l10n.alreadyBookedSnack);
+      return;
+    }
+    final confirmed = appointment;
+    _done = true;
+
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -278,7 +272,7 @@ class _BookingScreenState extends State<BookingScreen> {
         final dialogL10n = L10n.of(dialogContext);
         return AlertDialog(
           icon: TonalIcon(
-            icon: PhosphorIconsRegular.check,
+            icon: CoolIcons.check,
             size: 56,
             iconSize: 28,
             background: scheme.primary,
@@ -288,26 +282,22 @@ class _BookingScreenState extends State<BookingScreen> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                dialogL10n.weekdayBoth(appointment.date),
-                textAlign: TextAlign.center,
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: scheme.onSurfaceVariant,
+              DateText(
+                date: confirmed.date,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                primaryStyle: theme.textTheme.titleMedium,
+                secondaryStyle: theme.textTheme.bodySmall,
+              ),
+              if (_doctorHours != null) ...[
+                const SizedBox(height: 6),
+                Text(
+                  '${dialogL10n.doctorHours} · $_doctorHours',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                dialogL10n.dateBoth(appointment.date),
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                dialogL10n.appointmentTime(appointment.slot),
-                style: theme.textTheme.titleMedium,
-              ),
+              ],
               const SizedBox(height: 10),
               Text(
                 '${_department.displayName}\n${_doctor.displayName}',
@@ -336,6 +326,30 @@ class _BookingScreenState extends State<BookingScreen> {
     if (mounted) setState(() => _submitting = false);
   }
 
+  Future<void> _confirmDiscard() async {
+    final l10n = L10n.of(context);
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.discardTitle),
+        content: Text(l10n.discardBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(l10n.keepEditing),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(l10n.discardChanges),
+          ),
+        ],
+      ),
+    );
+    if (discard == true && mounted) {
+      Navigator.of(context).pop();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -345,274 +359,213 @@ class _BookingScreenState extends State<BookingScreen> {
         .where((doctor) => doctor.isSpecialist)
         .toList();
 
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.bookingNew)),
-      body: AppRefreshView(
-        onRefresh: demoRefresh,
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(12, 4, 12, 40),
-            children: [
-              Text(
-                l10n.bookingIntro,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
+    return PopScope(
+      canPop: !_dirty,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        await _confirmDiscard();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: const AppBackButton(),
+          title: Text(l10n.bookingNew),
+        ),
+        body: AppRefreshView(
+          onRefresh: demoRefresh,
+          child: Form(
+            key: _formKey,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(
+                AppTokens.gutter,
+                4,
+                AppTokens.gutter,
+                40,
               ),
-              const SizedBox(height: 12),
-              _InfoNote(
-                icon: PhosphorIconsRegular.calendarCheck,
-                text: l10n.bookingSaturdayNote,
-              ),
-              const SizedBox(height: 24),
-              _StepTitle(number: '1', title: l10n.bookingStepDepartment),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final department in bookableDepartments)
-                    ChoicePill(
-                      label: department.displayName,
-                      selected: department.id == _department.id,
-                      onTap: () => _selectDepartment(department),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 26),
-              _StepTitle(number: '2', title: l10n.bookingStepDoctor),
-              const SizedBox(height: 12),
-              for (final doctor in departmentDoctors) ...[
-                _DoctorChoice(
-                  doctor: doctor,
-                  selected: doctor.id == _doctor.id,
-                  onTap: () => _selectDoctor(doctor),
-                ),
-                const SizedBox(height: 8),
-              ],
-              const SizedBox(height: 18),
-              _StepTitle(number: '3', title: l10n.bookingStepDate),
-              const SizedBox(height: 12),
-              SizedBox(
-                height: 88,
-                child: ListView.separated(
-                  controller: _dateController,
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _doctorDates.length,
-                  separatorBuilder: (_, _) =>
-                      const SizedBox(width: _dateChipGap),
-                  itemBuilder: (context, index) {
-                    final date = _doctorDates[index];
-                    return _DateChip(
-                      date: date,
-                      scheduleLabel: _doctor.saturdayGroup == null
-                          ? l10n.specialistHoursShort
-                          : l10n.saturdayGroupShort(_doctor.saturdayGroup!),
-                      selected: _sameDay(date, _date),
-                      enabled: _hasAnyAvailableSlot(_doctor, date),
-                      onTap: () => _selectDate(date),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton.icon(
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => const SaturdayScheduleScreen(),
-                    ),
+              children: [
+                Text(
+                  l10n.bookingIntro,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: scheme.onSurfaceVariant,
                   ),
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    minimumSize: const Size(0, 36),
-                    visualDensity: VisualDensity.compact,
-                  ),
-                  icon: const Icon(PhosphorIconsRegular.calendarDots, size: 17),
-                  label: Text(l10n.viewSaturdaySchedule),
                 ),
-              ),
-              const SizedBox(height: 18),
-              _StepTitle(number: '4', title: l10n.bookingStepTime),
-              const SizedBox(height: 12),
-              _buildSlots(theme, scheme, l10n),
-              const SizedBox(height: 26),
-              _StepTitle(number: '5', title: l10n.bookingStepPatient),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _nameController,
-                textInputAction: TextInputAction.next,
-                textCapitalization: TextCapitalization.words,
-                decoration: InputDecoration(
-                  hintText: l10n.bookingPatientNameHint,
-                  prefixIcon: const Icon(PhosphorIconsRegular.user),
+                const SizedBox(height: 12),
+                _InfoNote(
+                  icon: CoolIcons.calendarCheck,
+                  text: l10n.bookingSaturdayNote,
                 ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return l10n.bookingNameError;
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _phoneController,
-                keyboardType: TextInputType.phone,
-                textInputAction: TextInputAction.done,
-                decoration: InputDecoration(
-                  hintText: l10n.bookingPhoneHint,
-                  prefixIcon: const Icon(PhosphorIconsRegular.phone),
-                ),
-                validator: (value) {
-                  final digits = (value ?? '').replaceAll(
-                    RegExp(r'[^0-9०-९]'),
-                    '',
-                  );
-                  if (digits.length < 7) {
-                    return l10n.bookingPhoneError;
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 24),
-              Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: scheme.surfaceContainerHigh,
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: Column(
+                const SizedBox(height: 24),
+                _StepTitle(number: '1', title: l10n.bookingStepDepartment),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
                   children: [
-                    _SummaryRow(
-                      label: l10n.summaryDepartment,
-                      value: _department.displayName,
-                    ),
-                    const SizedBox(height: 10),
-                    _SummaryRow(
-                      label: l10n.summaryDoctor,
-                      value: _doctor.displayName,
-                    ),
-                    const SizedBox(height: 10),
-                    _SummaryRow(
-                      label: l10n.summaryDate,
-                      value:
-                          '${l10n.weekdayBoth(_date)}\n${l10n.dateBoth(_date)}',
-                    ),
-                    const SizedBox(height: 10),
-                    _SummaryRow(
-                      label: l10n.summaryTime,
-                      value: _slot == null
-                          ? l10n.summaryNotSelected
-                          : l10n.appointmentTime(_slot!),
-                    ),
-                    const SizedBox(height: 14),
-                    Row(
-                      children: [
-                        Text(
-                          l10n.summaryFee,
-                          style: theme.textTheme.titleSmall,
-                        ),
-                        const Spacer(),
-                        Text(
-                          l10n.money(_doctor.fee),
-                          style: theme.textTheme.titleMedium,
-                        ),
-                      ],
-                    ),
+                    for (final department in bookableDepartments)
+                      ChoicePill(
+                        label: department.displayName,
+                        selected: department.id == _department.id,
+                        onTap: () => _selectDepartment(department),
+                      ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                l10n.bookingNote,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
+                const SizedBox(height: 26),
+                _StepTitle(number: '2', title: l10n.bookingStepDoctor),
+                const SizedBox(height: 12),
+                for (final doctor in departmentDoctors) ...[
+                  _DoctorChoice(
+                    doctor: doctor,
+                    selected: doctor.id == _doctor.id,
+                    onTap: () => _selectDoctor(doctor),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+                const SizedBox(height: 18),
+                _StepTitle(number: '3', title: l10n.bookingStepDate),
+                const SizedBox(height: 12),
+                BookingDateRail(
+                  doctor: _doctor,
+                  dates: _doctorDates,
+                  selectedDate: _date,
+                  onSelected: _selectDate,
+                  controller: _dateController,
                 ),
-              ),
-              const SizedBox(height: 20),
-              FilledButton(
-                onPressed: _submit,
-                child: Text(l10n.confirmAppointment),
-              ),
-            ],
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const SaturdayScheduleScreen(),
+                      ),
+                    ),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      minimumSize: const Size(0, AppTokens.minTap),
+                    ),
+                    icon: const Icon(CoolIcons.calendarDots, size: 17),
+                    label: Text(l10n.viewSaturdaySchedule),
+                  ),
+                ),
+                const SizedBox(height: 22),
+                _StepTitle(number: '4', title: l10n.bookingStepPatient),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _nameController,
+                  textInputAction: TextInputAction.next,
+                  textCapitalization: TextCapitalization.words,
+                  decoration: InputDecoration(
+                    hintText: l10n.bookingPatientNameHint,
+                    prefixIcon: const Icon(CoolIcons.user),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return l10n.bookingNameError;
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _phoneController,
+                  keyboardType: TextInputType.phone,
+                  textInputAction: TextInputAction.done,
+                  decoration: InputDecoration(
+                    hintText: l10n.bookingPhoneHint,
+                    prefixIcon: const Icon(CoolIcons.phone),
+                  ),
+                  validator: (value) {
+                    final digits = (value ?? '').replaceAll(
+                      RegExp(r'[^0-9०-९]'),
+                      '',
+                    );
+                    if (digits.length < 7) {
+                      return l10n.bookingPhoneError;
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 24),
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: scheme.surfaceContainerHigh,
+                    borderRadius: BorderRadius.circular(AppTokens.radiusCard),
+                  ),
+                  child: Column(
+                    children: [
+                      DetailRow(
+                        label: l10n.summaryDepartment,
+                        value: _department.displayName,
+                      ),
+                      const SizedBox(height: 10),
+                      DetailRow(
+                        label: l10n.summaryDoctor,
+                        value: _doctor.displayName,
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            flex: 2,
+                            child: Text(
+                              l10n.summaryDate,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: scheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(flex: 3, child: DateText(date: _date)),
+                        ],
+                      ),
+                      _doctorHours == null
+                          ? const SizedBox.shrink()
+                          : Padding(
+                              padding: const EdgeInsets.only(top: 10),
+                              child: DetailRow(
+                                label: l10n.doctorHours,
+                                value: _doctorHours!,
+                              ),
+                            ),
+                      const SizedBox(height: 14),
+                      Row(
+                        children: [
+                          Text(
+                            l10n.summaryFee,
+                            style: theme.textTheme.titleSmall,
+                          ),
+                          const Spacer(),
+                          Text(
+                            l10n.money(_doctor.fee),
+                            style: theme.textTheme.titleMedium,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  l10n.bookingNote,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                FilledButton(
+                  onPressed: _submitting ? null : _submit,
+                  child: Text(l10n.confirmAppointment),
+                ),
+              ],
+            ),
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildSlots(ThemeData theme, ColorScheme scheme, L10n l10n) {
-    var hasAvailable = false;
-    final labels = {
-      SlotShift.morning: l10n.shiftMorning,
-      SlotShift.afternoon: l10n.shiftAfternoon,
-      SlotShift.evening: l10n.shiftEvening,
-    };
-
-    final groups = <Widget>[];
-    for (final shift in SlotShift.values) {
-      if (!_doctor.shifts.contains(shift)) continue;
-      final slots = clinicSlots[shift] ?? const <String>[];
-      if (slots.isEmpty) continue;
-
-      final children = <Widget>[];
-      for (final slot in slots) {
-        if (!_isSlotAvailable(slot)) continue;
-        hasAvailable = true;
-        children.add(
-          ChoicePill(
-            label: l10n.timeShort(slot),
-            selected: _slot == slot,
-            onTap: () => setState(() => _slot = slot),
-          ),
-        );
-      }
-      if (children.isEmpty) continue;
-
-      groups.add(
-        Padding(
-          padding: const EdgeInsets.only(bottom: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                labels[shift]!,
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Wrap(spacing: 8, runSpacing: 8, children: children),
-            ],
-          ),
-        ),
-      );
-    }
-
-    if (!hasAvailable) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _InfoNote(
-            icon: PhosphorIconsRegular.calendarX,
-            text: l10n.bookingNoSlots,
-          ),
-          const SizedBox(height: 12),
-          ...groups,
-        ],
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: groups,
     );
   }
 
@@ -656,104 +609,6 @@ class _StepTitle extends StatelessWidget {
   }
 }
 
-class _DateChip extends StatelessWidget {
-  const _DateChip({
-    required this.date,
-    required this.scheduleLabel,
-    required this.selected,
-    required this.enabled,
-    required this.onTap,
-  });
-
-  final DateTime date;
-  final String scheduleLabel;
-  final bool selected;
-  final bool enabled;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    final l10n = L10n.of(context);
-    final background = selected
-        ? scheme.primary
-        : enabled
-        ? scheme.surfaceContainerHigh
-        : scheme.surfaceContainerLow;
-    final foreground = selected
-        ? scheme.onPrimary
-        : enabled
-        ? scheme.onSurface
-        : scheme.onSurfaceVariant.withValues(alpha: 0.45);
-
-    return Material(
-      color: background,
-      borderRadius: BorderRadius.circular(18),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: enabled ? onTap : null,
-        child: SizedBox(
-          width: _BookingScreenState._dateChipWidth,
-          height: 88,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.dateChipAd(date),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: foreground,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  l10n.dateChipBs(date),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: foreground,
-                    fontSize: 11.5,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Icon(
-                      PhosphorIconsRegular.calendarBlank,
-                      size: 12,
-                      color: selected
-                          ? scheme.onPrimary.withValues(alpha: 0.85)
-                          : scheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      scheduleLabel,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        fontSize: 9.5,
-                        color: selected
-                            ? scheme.onPrimary.withValues(alpha: 0.85)
-                            : scheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _DoctorChoice extends StatelessWidget {
   const _DoctorChoice({
     required this.doctor,
@@ -770,105 +625,74 @@ class _DoctorChoice extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final l10n = L10n.of(context);
-    return Material(
-      color: selected ? scheme.primaryContainer : scheme.surfaceContainerLow,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(
-          color: selected ? scheme.primary : Colors.transparent,
-          width: 1.2,
+    return Semantics(
+      button: true,
+      selected: selected,
+      child: Material(
+        color: selected ? scheme.primaryContainer : scheme.surfaceContainerLow,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTokens.radiusField),
+          side: BorderSide(
+            color: selected ? scheme.primary : Colors.transparent,
+            width: 1.2,
+          ),
         ),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              DoctorAvatar(doctor: doctor, size: 52),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      doctor.displayName,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontSize: 14.5,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                DoctorAvatar(doctor: doctor, size: 52),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        doctor.displayName,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontSize: 14.5,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      doctor.displaySpecialty,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: scheme.onSurfaceVariant,
+                      const SizedBox(height: 2),
+                      Text(
+                        doctor.displaySpecialty,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      l10n.bookingDoctorNote(
-                        doctor.availability(l10n.language),
-                        doctor.fee,
+                      const SizedBox(height: 4),
+                      Text(
+                        l10n.bookingDoctorNote(
+                          doctor.availability(l10n.language),
+                          doctor.fee,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Icon(
-                selected
-                    ? PhosphorIconsFill.checkCircle
-                    : PhosphorIconsRegular.circle,
-                size: 22,
-                color: selected ? scheme.primary : scheme.outline,
-              ),
-            ],
+                const SizedBox(width: 8),
+                Icon(
+                  selected ? CoolIcons.checkCircleFill : CoolIcons.circle,
+                  size: 22,
+                  color: selected ? scheme.primary : scheme.outline,
+                ),
+              ],
+            ),
           ),
         ),
       ),
-    );
-  }
-}
-
-class _SummaryRow extends StatelessWidget {
-  const _SummaryRow({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 92,
-          child: Text(
-            label,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: scheme.onSurfaceVariant,
-            ),
-          ),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }
@@ -887,7 +711,7 @@ class _InfoNote extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: scheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppTokens.radiusInner),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,

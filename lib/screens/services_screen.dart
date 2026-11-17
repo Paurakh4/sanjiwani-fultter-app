@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import '../core/icons.dart';
 
 import '../core/l10n.dart';
+import '../core/tokens.dart';
 import '../data/demo_data.dart';
 import '../models.dart';
 import '../widgets/app_refresh.dart';
+import '../widgets/app_search_field.dart';
 import '../widgets/common.dart';
 import 'booking_screen.dart';
 import 'department_detail_screen.dart';
@@ -24,6 +26,8 @@ class ServicesScreen extends StatefulWidget {
 class _ServicesScreenState extends State<ServicesScreen> {
   late bool _showDepartments;
   String? _departmentFilter;
+  final _searchController = TextEditingController();
+  String _query = '';
 
   @override
   void initState() {
@@ -31,39 +35,70 @@ class _ServicesScreenState extends State<ServicesScreen> {
     _showDepartments = widget.showDepartmentsInitially;
   }
 
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   Future<void> _bookDoctor(Doctor doctor) async {
-    final l10n = L10n.of(context);
-    final created = await startBooking(
+    await startBooking(
       context,
       departmentId: doctor.departmentId,
       doctorId: doctor.id,
     );
-    if (created == true && mounted) {
-      showAppSnack(context, l10n.appointmentConfirmedSnack);
-    }
+  }
+
+  void _switchTab(int index) {
+    setState(() {
+      _showDepartments = index == 1;
+      _query = '';
+      _searchController.clear();
+    });
+  }
+
+  bool _doctorMatches(Doctor doctor, String query) {
+    return doctor.nameNp.toLowerCase().contains(query) ||
+        doctor.nameEn.toLowerCase().contains(query) ||
+        doctor.specialtyNp.toLowerCase().contains(query) ||
+        doctor.specialtyEn.toLowerCase().contains(query) ||
+        doctor.qualification.toLowerCase().contains(query);
+  }
+
+  bool _departmentMatches(Department department, String query) {
+    return department.nameNp.toLowerCase().contains(query) ||
+        department.nameEn.toLowerCase().contains(query) ||
+        department.descriptionNp.toLowerCase().contains(query) ||
+        department.descriptionEn.toLowerCase().contains(query);
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = L10n.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.servicesTitle)),
+      appBar: AppBar(
+        leading: const AppBackButton(),
+        title: Text(l10n.servicesTitle),
+      ),
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+            padding: const EdgeInsets.fromLTRB(
+              AppTokens.gutter,
+              4,
+              AppTokens.gutter,
+              12,
+            ),
             child: PillTabBar(
               labels: [l10n.tabDoctors, l10n.tabDepartments],
               selectedIndex: _showDepartments ? 1 : 0,
-              onChanged: (index) {
-                setState(() => _showDepartments = index == 1);
-              },
+              onChanged: _switchTab,
             ),
           ),
           Expanded(
             child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              switchInCurve: Curves.easeOutCubic,
+              duration: AppTokens.motionFast,
+              switchInCurve: AppTokens.ease,
               switchOutCurve: Curves.easeInCubic,
               child: _showDepartments
                   ? _buildDepartments(context)
@@ -79,19 +114,21 @@ class _ServicesScreenState extends State<ServicesScreen> {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final l10n = L10n.of(context);
-    final filtered =
-        _departmentFilter == null
-              ? ([
-                  ...specialistDoctors,
-                  ...doctors.where((d) => !d.isSpecialist),
-                ])
-              : doctors
-                    .where((doctor) => doctor.departmentId == _departmentFilter)
-                    .toList()
-          ..sort((a, b) {
-            if (a.isSpecialist == b.isSpecialist) return 0;
-            return a.isSpecialist ? -1 : 1;
-          });
+    var filtered = _departmentFilter == null
+        ? ([...specialistDoctors, ...doctors.where((d) => !d.isSpecialist)])
+        : doctors
+              .where((doctor) => doctor.departmentId == _departmentFilter)
+              .toList();
+    filtered.sort((a, b) {
+      if (a.isSpecialist == b.isSpecialist) return 0;
+      return a.isSpecialist ? -1 : 1;
+    });
+    final query = _query.trim().toLowerCase();
+    if (query.isNotEmpty) {
+      filtered = filtered
+          .where((doctor) => _doctorMatches(doctor, query))
+          .toList();
+    }
     final doctorFilters = departments
         .where((department) => department.doctorIds.isNotEmpty)
         .toList();
@@ -100,11 +137,24 @@ class _ServicesScreenState extends State<ServicesScreen> {
       key: const ValueKey('doctors'),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppTokens.gutter,
+            0,
+            AppTokens.gutter,
+            10,
+          ),
+          child: AppSearchField(
+            controller: _searchController,
+            hint: l10n.searchDoctorsHint,
+            onChanged: (value) => setState(() => _query = value),
+          ),
+        ),
         SizedBox(
-          height: 42,
+          height: 48,
           child: ListView(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            padding: const EdgeInsets.symmetric(horizontal: AppTokens.gutter),
             children: [
               ChoicePill(
                 label: l10n.all,
@@ -124,39 +174,47 @@ class _ServicesScreenState extends State<ServicesScreen> {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
+          padding: const EdgeInsets.fromLTRB(
+            AppTokens.gutter,
+            4,
+            AppTokens.gutter,
+            4,
+          ),
           child: InkWell(
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
                 builder: (_) => const SaturdayScheduleScreen(),
               ),
             ),
-            borderRadius: BorderRadius.circular(12),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Row(
-                children: [
-                  Icon(
-                    PhosphorIconsRegular.calendarDots,
-                    size: 16,
-                    color: scheme.primary,
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      l10n.specialistRotationNote,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: scheme.onSurfaceVariant,
+            borderRadius: BorderRadius.circular(AppTokens.radiusCell),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: AppTokens.minTap),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  children: [
+                    Icon(
+                      CoolIcons.calendarDots,
+                      size: 16,
+                      color: scheme.primary,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        l10n.specialistRotationNote,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 4),
-                  Icon(
-                    PhosphorIconsRegular.caretRight,
-                    size: 16,
-                    color: scheme.onSurfaceVariant,
-                  ),
-                ],
+                    const SizedBox(width: 4),
+                    Icon(
+                      CoolIcons.caretRight,
+                      size: 16,
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -166,16 +224,25 @@ class _ServicesScreenState extends State<ServicesScreen> {
               ? AppRefreshEmpty(
                   onRefresh: demoRefresh,
                   child: EmptyState(
-                    icon: PhosphorIconsRegular.stethoscope,
-                    title: l10n.noDoctorsTitle,
-                    message: l10n.noDoctorsMessage,
+                    icon: CoolIcons.stethoscope,
+                    title: query.isNotEmpty
+                        ? l10n.noResultsTitle
+                        : l10n.noDoctorsTitle,
+                    message: query.isNotEmpty
+                        ? l10n.noResultsMessage
+                        : l10n.noDoctorsMessage,
                   ),
                 )
               : AppRefreshView(
                   onRefresh: demoRefresh,
                   child: ListView.separated(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 32),
+                    padding: const EdgeInsets.fromLTRB(
+                      AppTokens.gutter,
+                      8,
+                      AppTokens.gutter,
+                      32,
+                    ),
                     itemCount: filtered.length,
                     separatorBuilder: (_, _) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
@@ -193,19 +260,60 @@ class _ServicesScreenState extends State<ServicesScreen> {
   }
 
   Widget _buildDepartments(BuildContext context) {
-    return AppRefreshView(
+    final l10n = L10n.of(context);
+    final query = _query.trim().toLowerCase();
+    final filtered = query.isEmpty
+        ? departments
+        : departments
+              .where((department) => _departmentMatches(department, query))
+              .toList();
+
+    return Column(
       key: const ValueKey('departments'),
-      onRefresh: demoRefresh,
-      child: ListView.separated(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(12, 8, 12, 32),
-        itemCount: departments.length,
-        separatorBuilder: (_, _) => const SizedBox(height: 12),
-        itemBuilder: (context, index) {
-          final department = departments[index];
-          return _DepartmentListCard(department: department);
-        },
-      ),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppTokens.gutter,
+            0,
+            AppTokens.gutter,
+            10,
+          ),
+          child: AppSearchField(
+            controller: _searchController,
+            onChanged: (value) => setState(() => _query = value),
+          ),
+        ),
+        Expanded(
+          child: filtered.isEmpty
+              ? AppRefreshEmpty(
+                  onRefresh: demoRefresh,
+                  child: EmptyState(
+                    icon: CoolIcons.folderOpen,
+                    title: l10n.noResultsTitle,
+                    message: l10n.noResultsMessage,
+                  ),
+                )
+              : AppRefreshView(
+                  onRefresh: demoRefresh,
+                  child: ListView.separated(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(
+                      AppTokens.gutter,
+                      8,
+                      AppTokens.gutter,
+                      32,
+                    ),
+                    itemCount: filtered.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final department = filtered[index];
+                      return _DepartmentListCard(department: department);
+                    },
+                  ),
+                ),
+        ),
+      ],
     );
   }
 }
@@ -243,6 +351,8 @@ class _DoctorListCard extends StatelessWidget {
                   children: [
                     Text(
                       doctor.displayName,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontSize: 15.5,
                       ),
@@ -277,11 +387,7 @@ class _DoctorListCard extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              Icon(
-                PhosphorIconsRegular.clock,
-                size: 15,
-                color: scheme.onSurfaceVariant,
-              ),
+              Icon(CoolIcons.clock, size: 15, color: scheme.onSurfaceVariant),
               const SizedBox(width: 5),
               Expanded(
                 child: Text(
@@ -309,8 +415,7 @@ class _DoctorListCard extends StatelessWidget {
               child: FilledButton(
                 onPressed: onBook,
                 style: FilledButton.styleFrom(
-                  minimumSize: const Size(0, 40),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  minimumSize: const Size(0, AppTokens.minTap),
                   textStyle: const TextStyle(fontSize: 13),
                 ),
                 child: Text(l10n.bookAppointment),
@@ -359,6 +464,8 @@ class _DepartmentListCard extends StatelessWidget {
               children: [
                 Text(
                   department.displayName,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.titleMedium?.copyWith(fontSize: 15.5),
                 ),
                 const SizedBox(height: 3),
@@ -384,7 +491,7 @@ class _DepartmentListCard extends StatelessWidget {
               ],
             ),
           ),
-          Icon(PhosphorIconsRegular.caretRight, color: scheme.onSurfaceVariant),
+          Icon(CoolIcons.caretRight, color: scheme.onSurfaceVariant),
         ],
       ),
     );

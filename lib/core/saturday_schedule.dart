@@ -30,6 +30,15 @@ DateTime nextSaturdayFrom(DateTime from) {
   return date;
 }
 
+/// The Saturday a patient can still book: today if it is Saturday and the
+/// specialist window (until 17:00) has not closed, otherwise the next one.
+DateTime nextBookableSaturday(DateTime now) {
+  if (now.weekday == DateTime.saturday && now.hour < 17) {
+    return dateOnly(now);
+  }
+  return nextSaturdayFrom(now);
+}
+
 DateTime nextSaturdayForGroup(SaturdayGroup group, {DateTime? from}) {
   var date = nextSaturdayFrom(from ?? DateTime.now());
   for (var i = 0; i < 12; i++) {

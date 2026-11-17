@@ -9,6 +9,7 @@ import '../core/fonts.dart';
 import '../core/l10n.dart';
 import '../core/nepali.dart';
 import '../core/palette.dart';
+import '../core/tokens.dart';
 import '../data/demo_data.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
@@ -19,9 +20,14 @@ import 'edit_profile_screen.dart';
 import 'notifications_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key, required this.onOpenTab});
+  const ProfileScreen({
+    super.key,
+    required this.onOpenTab,
+    this.scrollController,
+  });
 
   final ValueChanged<int> onOpenTab;
+  final ScrollController? scrollController;
 
   @override
   Widget build(BuildContext context) {
@@ -39,8 +45,14 @@ class ProfileScreen extends StatelessWidget {
       child: AppRefreshView(
         onRefresh: demoRefresh,
         child: ListView(
+          controller: scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(12, 12, 12, 40),
+          padding: const EdgeInsets.fromLTRB(
+            AppTokens.gutter,
+            12,
+            AppTokens.gutter,
+            40,
+          ),
           children: [
             Row(
               children: [
@@ -57,7 +69,7 @@ class ProfileScreen extends StatelessWidget {
                     ),
                   ),
                   tooltip: l10n.editProfileTooltip,
-                  icon: const Icon(PhosphorIconsRegular.pencilSimple),
+                  icon: const Icon(CoolIcons.pencilSimple),
                 ),
               ],
             ),
@@ -123,7 +135,9 @@ class ProfileScreen extends StatelessWidget {
                     runSpacing: 8,
                     children: [
                       StatusPill(
-                        label: l10n.bloodGroup(profile.bloodGroup),
+                        label: l10n.bloodGroup(
+                          l10n.bloodGroupDisplay(profile.bloodGroup),
+                        ),
                         background: scheme.surfaceContainerHigh,
                         foreground: scheme.onSurface,
                       ),
@@ -166,12 +180,12 @@ class ProfileScreen extends StatelessWidget {
             ),
             _SectionLabel(text: l10n.sectionMyHealth),
             _ProfileAction(
-              icon: PhosphorIconsRegular.folderOpen,
+              icon: CoolIcons.folderOpen,
               label: l10n.recordsLabel,
               onTap: () => onOpenTab(2),
             ),
             _ProfileAction(
-              icon: PhosphorIconsRegular.bellSimple,
+              icon: CoolIcons.bellSimple,
               label: l10n.notificationsLabel,
               trailing: state.unreadCount > 0
                   ? StatusPill(
@@ -187,7 +201,7 @@ class ProfileScreen extends StatelessWidget {
               ),
             ),
             _ProfileAction(
-              icon: PhosphorIconsRegular.calendarBlank,
+              icon: CoolIcons.calendarBlank,
               label: l10n.appointmentsMenu,
               onTap: () => onOpenTab(1),
             ),
@@ -198,7 +212,7 @@ class ProfileScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _PreferenceHeader(
-                    icon: PhosphorIconsRegular.circleHalf,
+                    icon: CoolIcons.circleHalf,
                     title: l10n.themeTitle,
                     subtitle: l10n.themeSubtitle,
                   ),
@@ -226,7 +240,7 @@ class ProfileScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 22),
                   _PreferenceHeader(
-                    icon: PhosphorIconsRegular.translate,
+                    icon: CoolIcons.translate,
                     title: l10n.languageTitle,
                     subtitle: l10n.languageSubtitle,
                   ),
@@ -240,7 +254,23 @@ class ProfileScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 22),
                   _PreferenceHeader(
-                    icon: PhosphorIconsRegular.palette,
+                    icon: CoolIcons.calendarDots,
+                    title: l10n.dateDisplayTitle,
+                    subtitle: l10n.dateDisplaySubtitle,
+                  ),
+                  const SizedBox(height: 12),
+                  PillTabBar(
+                    labels: [l10n.dateNepaliOption, l10n.dateEnglishOption],
+                    selectedIndex: state.datePrimary == DatePrimary.nepali
+                        ? 0
+                        : 1,
+                    onChanged: (index) => state.setDatePrimary(
+                      index == 0 ? DatePrimary.nepali : DatePrimary.english,
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                  _PreferenceHeader(
+                    icon: CoolIcons.palette,
                     title: l10n.accentTitle,
                     subtitle: l10n.accentSubtitle,
                   ),
@@ -270,7 +300,7 @@ class ProfileScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
                   _PreferenceHeader(
-                    icon: PhosphorIconsRegular.textAa,
+                    icon: CoolIcons.textAa,
                     title: l10n.fontsTitle,
                     subtitle: l10n.fontsSubtitle,
                   ),
@@ -323,14 +353,14 @@ class ProfileScreen extends StatelessWidget {
             ),
             _SectionLabel(text: l10n.sectionClinic),
             _ProfileAction(
-              icon: PhosphorIconsRegular.mapPin,
+              icon: CoolIcons.mapPin,
               label: l10n.contactHours,
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute<void>(builder: (_) => const ContactScreen()),
               ),
             ),
             _ProfileAction(
-              icon: PhosphorIconsRegular.info,
+              icon: CoolIcons.info,
               label: l10n.aboutApp,
               onTap: () => _showAbout(context),
             ),
@@ -510,10 +540,7 @@ class _ProfileAction extends StatelessWidget {
                 ),
               ),
               if (trailing != null) ...[trailing!, const SizedBox(width: 6)],
-              Icon(
-                PhosphorIconsRegular.caretRight,
-                color: scheme.onSurfaceVariant,
-              ),
+              Icon(CoolIcons.caretRight, color: scheme.onSurfaceVariant),
             ],
           ),
         ),
@@ -618,7 +645,7 @@ class _FontSelector extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
             color: scheme.surfaceContainer,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(AppTokens.radiusCell),
           ),
           child: Text(
             preview,
@@ -650,41 +677,46 @@ class _PaletteChoice extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final language = L10n.of(context).language;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Padding(
-        padding: const EdgeInsets.all(2),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: palette.strong,
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: selected ? scheme.onSurface : Colors.transparent,
-                  width: 2,
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: language == AppLanguage.en ? palette.labelEn : palette.labelNp,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppTokens.radiusCell),
+        child: Padding(
+          padding: const EdgeInsets.all(2),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: palette.strong,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: selected ? scheme.onSurface : Colors.transparent,
+                    width: 2,
+                  ),
+                ),
+                child: selected
+                    ? Icon(
+                        CoolIcons.check,
+                        color: palette.onStrong(false),
+                        size: 18,
+                      )
+                    : null,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                language == AppLanguage.en ? palette.labelEn : palette.labelNp,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: selected ? scheme.onSurface : scheme.onSurfaceVariant,
                 ),
               ),
-              child: selected
-                  ? const Icon(
-                      PhosphorIconsRegular.check,
-                      color: Colors.white,
-                      size: 18,
-                    )
-                  : null,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              language == AppLanguage.en ? palette.labelEn : palette.labelNp,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: selected ? scheme.onSurface : scheme.onSurfaceVariant,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

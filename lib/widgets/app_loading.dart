@@ -45,6 +45,7 @@ Future<T> runWithLogoLoading<T>(
   BuildContext context,
   Future<T> Function() task, {
   Duration minimum = const Duration(milliseconds: 1900),
+  String? barrierLabel,
 }) async {
   final stopwatch = Stopwatch()..start();
   BuildContext? overlayContext;
@@ -52,7 +53,7 @@ Future<T> runWithLogoLoading<T>(
   final overlay = showGeneralDialog<void>(
     context: context,
     barrierDismissible: false,
-    barrierLabel: 'Loading',
+    barrierLabel: barrierLabel ?? 'Loading',
     barrierColor: Colors.transparent,
     transitionDuration: const Duration(milliseconds: 220),
     pageBuilder: (dialogContext, _, _) {

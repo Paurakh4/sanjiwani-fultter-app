@@ -24,8 +24,6 @@ abstract final class Clinic {
 
   static const openHour = 7;
   static const closeHour = 20;
-  static const specialistStartHour = 10;
-  static const specialistEndHour = 17;
 
   static String name(AppLanguage language) =>
       language == AppLanguage.en ? nameEn : nameNp;

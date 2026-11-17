@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 
 import '../core/l10n.dart';
 import '../core/palette.dart';
+import '../core/tokens.dart';
 import '../state/app_state.dart';
 import '../widgets/common.dart';
 
@@ -38,7 +39,12 @@ class OnboardingScreen extends StatelessWidget {
       child: Scaffold(
         body: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16, 24, 16, 36),
+            padding: const EdgeInsets.fromLTRB(
+              AppTokens.gutter,
+              24,
+              AppTokens.gutter,
+              36,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -87,7 +93,7 @@ class OnboardingScreen extends StatelessWidget {
                     Expanded(
                       child: _ThemeOption(
                         label: l10n.themeLight,
-                        icon: PhosphorIconsRegular.sun,
+                        icon: CoolIcons.sun,
                         background: const Color(0xFFF7FAF5),
                         foreground: const Color(0xFF101710),
                         selected: selectedTheme == ThemeMode.light,
@@ -100,7 +106,7 @@ class OnboardingScreen extends StatelessWidget {
                     Expanded(
                       child: _ThemeOption(
                         label: l10n.themeDark,
-                        icon: PhosphorIconsRegular.moonStars,
+                        icon: CoolIcons.moonStars,
                         background: const Color(0xFF121712),
                         foreground: const Color(0xFFE5EAE3),
                         selected: selectedTheme == ThemeMode.dark,
@@ -253,7 +259,7 @@ class _ThemeOption extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Container(
-          height: 126,
+          height: AppTokens.scaled(context, 126),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(22),
@@ -278,7 +284,7 @@ class _ThemeOption extends StatelessWidget {
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
-                        PhosphorIconsRegular.check,
+                        CoolIcons.check,
                         size: 15,
                         color: scheme.onPrimary,
                       ),
@@ -318,41 +324,46 @@ class _PaletteOption extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final language = L10n.of(context).language;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Padding(
-        padding: const EdgeInsets.all(4),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: palette.strong,
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: selected ? scheme.onSurface : Colors.transparent,
-                  width: 2,
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: language == AppLanguage.en ? palette.labelEn : palette.labelNp,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(4),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: palette.strong,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: selected ? scheme.onSurface : Colors.transparent,
+                    width: 2,
+                  ),
+                ),
+                child: selected
+                    ? Icon(
+                        CoolIcons.check,
+                        color: palette.onStrong(false),
+                        size: 20,
+                      )
+                    : null,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                language == AppLanguage.en ? palette.labelEn : palette.labelNp,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: selected ? scheme.onSurface : scheme.onSurfaceVariant,
                 ),
               ),
-              child: selected
-                  ? const Icon(
-                      PhosphorIconsRegular.check,
-                      color: Colors.white,
-                      size: 20,
-                    )
-                  : null,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              language == AppLanguage.en ? palette.labelEn : palette.labelNp,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: selected ? scheme.onSurface : scheme.onSurfaceVariant,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

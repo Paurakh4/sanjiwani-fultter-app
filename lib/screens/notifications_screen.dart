@@ -5,10 +5,16 @@ import '../core/icons.dart';
 import 'package:provider/provider.dart';
 
 import '../core/l10n.dart';
+import '../core/tokens.dart';
+import '../data/demo_data.dart';
 import '../models.dart';
 import '../state/app_state.dart';
 import '../widgets/app_refresh.dart';
 import '../widgets/common.dart';
+import '../widgets/notice_carousel.dart';
+import 'appointment_detail_screen.dart';
+import 'appointments_screen.dart';
+import 'visit_detail_screen.dart';
 
 class NotificationsScreen extends StatelessWidget {
   const NotificationsScreen({super.key});
@@ -31,6 +37,7 @@ class NotificationsScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
+        leading: const AppBackButton(),
         title: Text(l10n.notificationsTitle),
         actions: [
           if (state.unreadCount > 0)
@@ -45,7 +52,7 @@ class NotificationsScreen extends StatelessWidget {
           ? AppRefreshEmpty(
               onRefresh: demoRefresh,
               child: EmptyState(
-                icon: PhosphorIconsRegular.bellSimple,
+                icon: CoolIcons.bellSimple,
                 title: l10n.noNotificationsTitle,
                 message: l10n.noNotificationsMessage,
               ),
@@ -54,7 +61,12 @@ class NotificationsScreen extends StatelessWidget {
               onRefresh: demoRefresh,
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(12, 4, 12, 32),
+                padding: const EdgeInsets.fromLTRB(
+                  AppTokens.gutter,
+                  4,
+                  AppTokens.gutter,
+                  32,
+                ),
                 children: [
                   for (final entry in groups.entries) ...[
                     Padding(
@@ -71,6 +83,7 @@ class NotificationsScreen extends StatelessWidget {
                       _NotificationCard(
                         notification: notification,
                         language: language,
+                        onOpen: () => _open(context, notification),
                       ),
                       const SizedBox(height: 10),
                     ],
@@ -90,13 +103,55 @@ class NotificationsScreen extends StatelessWidget {
     if (diff == 1) return l10n.groupYesterday;
     return l10n.groupEarlier;
   }
+
+  void _open(BuildContext context, AppNotification notification) {
+    final state = context.read<AppState>();
+    state.markNotificationRead(notification.id);
+    final l10n = L10n.of(context);
+    final refId = notification.refId;
+
+    switch (notification.kind) {
+      case 'appointment':
+        final exists =
+            refId != null && state.appointments.any((a) => a.id == refId);
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => exists
+                ? AppointmentDetailScreen(appointmentId: refId)
+                : const AppointmentsScreen(),
+          ),
+        );
+      case 'record':
+        final records = demoRecords(l10n.language);
+        final record = records.firstWhere(
+          (r) => r.id == refId,
+          orElse: () => records.first,
+        );
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => VisitDetailScreen(record: record),
+          ),
+        );
+      default:
+        final notice = notices.firstWhere(
+          (n) => n.id == refId,
+          orElse: () => notices.first,
+        );
+        openNotice(context, notice);
+    }
+  }
 }
 
 class _NotificationCard extends StatelessWidget {
-  const _NotificationCard({required this.notification, required this.language});
+  const _NotificationCard({
+    required this.notification,
+    required this.language,
+    required this.onOpen,
+  });
 
   final AppNotification notification;
   final AppLanguage language;
+  final VoidCallback onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -108,8 +163,7 @@ class _NotificationCard extends StatelessWidget {
     return AppCard(
       padding: const EdgeInsets.all(16),
       color: unread ? scheme.surfaceContainerHigh : null,
-      onTap: () =>
-          context.read<AppState>().markNotificationRead(notification.id),
+      onTap: onOpen,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -135,12 +189,15 @@ class _NotificationCard extends StatelessWidget {
                     if (unread) ...[
                       Padding(
                         padding: const EdgeInsets.only(top: 6),
-                        child: Container(
-                          width: 6,
-                          height: 6,
-                          decoration: BoxDecoration(
-                            color: scheme.primary,
-                            shape: BoxShape.circle,
+                        child: Semantics(
+                          label: l10n.unread,
+                          child: Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: scheme.primary,
+                              shape: BoxShape.circle,
+                            ),
                           ),
                         ),
                       ),
@@ -149,6 +206,8 @@ class _NotificationCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         notification.displayTitle(language),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontSize: 14.5,
                         ),
@@ -183,9 +242,9 @@ class _NotificationCard extends StatelessWidget {
 
   IconData _iconFor(String kind) {
     return switch (kind) {
-      'appointment' => PhosphorIconsRegular.calendarCheck,
-      'record' => PhosphorIconsRegular.testTube,
-      _ => PhosphorIconsRegular.megaphone,
+      'appointment' => CoolIcons.calendarCheck,
+      'record' => CoolIcons.testTube,
+      _ => CoolIcons.megaphone,
     };
   }
 }

@@ -6,6 +6,8 @@ import 'package:provider/provider.dart';
 
 import '../core/l10n.dart';
 import '../core/nepali.dart';
+import '../core/tokens.dart';
+import '../models.dart';
 import '../state/app_state.dart';
 import '../widgets/app_refresh.dart';
 import '../widgets/common.dart';
@@ -38,6 +40,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late final TextEditingController _addressController;
   late String _gender;
   late String _bloodGroup;
+  late final PatientProfile _initial;
+  late String _initialGender;
+  late String _initialBloodGroup;
+  bool _saved = false;
+
+  bool get _dirty =>
+      !_saved &&
+      (_nameController.text != _initial.name ||
+          _phoneController.text != _initial.phone ||
+          _ageController.text != _initial.age ||
+          _addressController.text != _initial.address ||
+          _gender != _initialGender ||
+          _bloodGroup != _initialBloodGroup);
 
   @override
   void initState() {
@@ -53,6 +68,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _bloodGroup = _bloodGroups.contains(profile.bloodGroup)
         ? profile.bloodGroup
         : 'थाहा छैन';
+    _initial = profile;
+    _initialGender = _gender;
+    _initialBloodGroup = _bloodGroup;
   }
 
   @override
@@ -84,6 +102,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       ),
     );
 
+    _saved = true;
     Navigator.of(context).pop();
     messenger.showSnackBar(SnackBar(content: Text(l10n.profileSaved)));
   }
@@ -95,155 +114,191 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final l10n = L10n.of(context);
     final profile = context.read<AppState>().profile;
 
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.editProfileTitle)),
-      body: AppRefreshView(
-        onRefresh: demoRefresh,
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(12, 4, 12, 40),
-            children: [
-              Text(
-                l10n.editProfileIntro,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: scheme.onSurfaceVariant,
+    return PopScope(
+      canPop: !_dirty,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (!didPop) await _confirmDiscard();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: const AppBackButton(),
+          title: Text(l10n.editProfileTitle),
+        ),
+        body: AppRefreshView(
+          onRefresh: demoRefresh,
+          child: Form(
+            key: _formKey,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(
+                AppTokens.gutter,
+                4,
+                AppTokens.gutter,
+                40,
+              ),
+              children: [
+                Text(
+                  l10n.editProfileIntro,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 20),
-              TextFormField(
-                controller: _nameController,
-                textInputAction: TextInputAction.next,
-                textCapitalization: TextCapitalization.words,
-                decoration: InputDecoration(
-                  hintText: l10n.fullNameHint,
-                  prefixIcon: const Icon(PhosphorIconsRegular.user),
+                const SizedBox(height: 20),
+                TextFormField(
+                  controller: _nameController,
+                  textInputAction: TextInputAction.next,
+                  textCapitalization: TextCapitalization.words,
+                  decoration: InputDecoration(
+                    hintText: l10n.fullNameHint,
+                    prefixIcon: const Icon(CoolIcons.user),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return l10n.nameRequired;
+                    }
+                    return null;
+                  },
                 ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return l10n.nameRequired;
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _phoneController,
-                keyboardType: TextInputType.phone,
-                textInputAction: TextInputAction.next,
-                decoration: InputDecoration(
-                  hintText: l10n.phoneHint,
-                  prefixIcon: const Icon(PhosphorIconsRegular.phone),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _phoneController,
+                  keyboardType: TextInputType.phone,
+                  textInputAction: TextInputAction.next,
+                  decoration: InputDecoration(
+                    hintText: l10n.phoneHint,
+                    prefixIcon: const Icon(CoolIcons.phone),
+                  ),
+                  validator: (value) {
+                    final digits = (value ?? '').replaceAll(
+                      RegExp(r'[^0-9०-९]'),
+                      '',
+                    );
+                    if (digits.length < 7) {
+                      return l10n.phoneInvalid;
+                    }
+                    return null;
+                  },
                 ),
-                validator: (value) {
-                  final digits = (value ?? '').replaceAll(
-                    RegExp(r'[^0-9०-९]'),
-                    '',
-                  );
-                  if (digits.length < 7) {
-                    return l10n.phoneInvalid;
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _ageController,
-                keyboardType: TextInputType.number,
-                textInputAction: TextInputAction.next,
-                decoration: InputDecoration(
-                  hintText: l10n.ageHint,
-                  prefixIcon: const Icon(PhosphorIconsRegular.cake),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _ageController,
+                  keyboardType: TextInputType.number,
+                  textInputAction: TextInputAction.next,
+                  decoration: InputDecoration(
+                    hintText: l10n.ageHint,
+                    prefixIcon: const Icon(CoolIcons.cake),
+                  ),
+                  validator: (value) {
+                    final text = (value ?? '').trim();
+                    if (text.isEmpty) return null;
+                    final age = int.tryParse(asciiDigits(text));
+                    if (age == null || age < 1 || age > 120) {
+                      return l10n.ageInvalid;
+                    }
+                    return null;
+                  },
                 ),
-                validator: (value) {
-                  final text = (value ?? '').trim();
-                  if (text.isEmpty) return null;
-                  final age = int.tryParse(asciiDigits(text));
-                  if (age == null || age < 1 || age > 120) {
-                    return l10n.ageInvalid;
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
-              _FieldLabel(text: l10n.genderLabel),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final gender in _genders)
-                    ChoicePill(
-                      label: l10n.gender(gender),
-                      selected: _gender == gender,
-                      onTap: () => setState(() => _gender = gender),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              _FieldLabel(text: l10n.bloodGroupLabel),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final group in _bloodGroups)
-                    ChoicePill(
-                      label: group,
-                      selected: _bloodGroup == group,
-                      onTap: () => setState(() => _bloodGroup = group),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              TextFormField(
-                controller: _addressController,
-                textInputAction: TextInputAction.done,
-                maxLines: 2,
-                decoration: InputDecoration(
-                  hintText: l10n.addressHint,
-                  prefixIcon: const Icon(PhosphorIconsRegular.mapPin),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: scheme.surfaceContainer,
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: Row(
+                const SizedBox(height: 20),
+                _FieldLabel(text: l10n.genderLabel),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
                   children: [
-                    Icon(
-                      PhosphorIconsRegular.identificationBadge,
-                      size: 20,
-                      color: scheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: 10),
-                    Text(
-                      l10n.patientIdField,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: scheme.onSurfaceVariant,
+                    for (final gender in _genders)
+                      ChoicePill(
+                        label: l10n.gender(gender),
+                        selected: _gender == gender,
+                        onTap: () => setState(() => _gender = gender),
                       ),
-                    ),
-                    const Spacer(),
-                    Text(
-                      profile.patientId,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 28),
-              FilledButton(onPressed: _save, child: Text(l10n.saveProfile)),
-            ],
+                const SizedBox(height: 20),
+                _FieldLabel(text: l10n.bloodGroupLabel),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final group in _bloodGroups)
+                      ChoicePill(
+                        label: l10n.bloodGroupDisplay(group),
+                        selected: _bloodGroup == group,
+                        onTap: () => setState(() => _bloodGroup = group),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                TextFormField(
+                  controller: _addressController,
+                  textInputAction: TextInputAction.done,
+                  maxLines: 2,
+                  decoration: InputDecoration(
+                    hintText: l10n.addressHint,
+                    prefixIcon: const Icon(CoolIcons.mapPin),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: scheme.surfaceContainer,
+                    borderRadius: BorderRadius.circular(AppTokens.radiusField),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        CoolIcons.identificationBadge,
+                        size: 20,
+                        color: scheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        l10n.patientIdField,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        profile.patientId,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 28),
+                FilledButton(onPressed: _save, child: Text(l10n.saveProfile)),
+              ],
+            ),
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _confirmDiscard() async {
+    final l10n = L10n.of(context);
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.discardTitle),
+        content: Text(l10n.discardBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(l10n.keepEditing),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(l10n.discardChanges),
+          ),
+        ],
+      ),
+    );
+    if (discard == true && mounted) Navigator.of(context).pop();
   }
 }
 

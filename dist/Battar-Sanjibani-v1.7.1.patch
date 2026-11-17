@@ -1,0 +1,1920 @@
+diff --git a/assets/fonts/Phosphor.ttf b/assets/fonts/Phosphor.ttf
+deleted file mode 100644
+index 7c1b8a7..0000000
+Binary files a/assets/fonts/Phosphor.ttf and /dev/null differ
+diff --git a/assets/fonts/PhosphorFill.ttf b/assets/fonts/PhosphorFill.ttf
+deleted file mode 100644
+index b02c4cb..0000000
+Binary files a/assets/fonts/PhosphorFill.ttf and /dev/null differ
+diff --git a/lib/core/app_info.dart b/lib/core/app_info.dart
+index c1fe7e3..ee99a2b 100644
+--- a/lib/core/app_info.dart
++++ b/lib/core/app_info.dart
+@@ -1,3 +1,3 @@
+ /// Single source of truth for the displayed app version. Keep in sync with
+ /// pubspec.yaml `version:` (the build-name portion).
+-const String kAppVersion = '1.7.0';
+\ No newline at end of file
++const String kAppVersion = '1.7.1';
+\ No newline at end of file
+diff --git a/lib/core/icons.dart b/lib/core/icons.dart
+index 6c5f5ba..0a29bd8 100644
+--- a/lib/core/icons.dart
++++ b/lib/core/icons.dart
+@@ -1,406 +1,72 @@
+-// Phosphor icons (MIT) — codepoints from phosphor-icons/core.
++// Coolicons (Line Round) — bundled icon font generated from Iconify coolicons "-round" glyphs.
+ import 'package:flutter/widgets.dart';
+ 
+-abstract final class PhosphorIconsRegular {
+-  const PhosphorIconsRegular._();
+-
+-  static const IconData arrowRight = IconData(
+-    0xe06c,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData bed = IconData(
+-    0xe0cc,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData bell = IconData(
+-    0xe0ce,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData bellSimple = IconData(
+-    0xe0d0,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData bone = IconData(
+-    0xe7f2,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData brain = IconData(
+-    0xe74e,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData cake = IconData(
+-    0xe780,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData calendarBlank = IconData(
+-    0xe10a,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData calendarCheck = IconData(
+-    0xe712,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData calendarDots = IconData(
+-    0xe7b4,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData calendarPlus = IconData(
+-    0xe714,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData calendarStar = IconData(
+-    0xe8b2,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData calendarX = IconData(
+-    0xe10c,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData caretLeft = IconData(
+-    0xe138,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData caretRight = IconData(
+-    0xe13a,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData check = IconData(
+-    0xe182,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData circle = IconData(
+-    0xe18a,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData circleHalf = IconData(
+-    0xe18c,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData clock = IconData(
+-    0xe19a,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData clockCounterClockwise = IconData(
+-    0xe1a0,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData deviceMobile = IconData(
+-    0xe1e0,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData ear = IconData(
+-    0xe70c,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData envelopeSimple = IconData(
+-    0xe218,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData fileText = IconData(
+-    0xe23a,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData folderOpen = IconData(
+-    0xe256,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData genderFemale = IconData(
+-    0xe6e0,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData globe = IconData(
+-    0xe288,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData heartbeat = IconData(
+-    0xe2ac,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData handTap = IconData(
+-    0xec90,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData house = IconData(
+-    0xe2c2,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData identificationBadge = IconData(
+-    0xe6f6,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData info = IconData(
+-    0xe2ce,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData mapPin = IconData(
+-    0xe316,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData megaphone = IconData(
+-    0xe324,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData monitor = IconData(
+-    0xe32e,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData moonStars = IconData(
+-    0xe58e,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData navigationArrow = IconData(
+-    0xeade,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData palette = IconData(
+-    0xe6c8,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData pencilSimple = IconData(
+-    0xe3b4,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData personSimpleWalk = IconData(
+-    0xe73a,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData phone = IconData(
+-    0xe3b8,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData phoneCall = IconData(
+-    0xe3ba,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData pill = IconData(
+-    0xe700,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData plus = IconData(
+-    0xe3d4,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData scan = IconData(
+-    0xebb6,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData siren = IconData(
+-    0xe9b8,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData sparkle = IconData(
+-    0xe6a2,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData starFour = IconData(
+-    0xe6a4,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData stethoscope = IconData(
+-    0xe7ea,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData sun = IconData(
+-    0xe472,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData testTube = IconData(
+-    0xe7a0,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData textAa = IconData(
+-    0xe6ee,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData tooth = IconData(
+-    0xe9cc,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData translate = IconData(
+-    0xe4a2,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData user = IconData(
+-    0xe4c2,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData userCircle = IconData(
+-    0xe4c4,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData usersThree = IconData(
+-    0xe68e,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData wallet = IconData(
+-    0xe68a,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData waveform = IconData(
+-    0xe802,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData whatsappLogo = IconData(
+-    0xe5d0,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData x = IconData(
+-    0xe4f6,
+-    fontFamily: 'Phosphor',
+-    matchTextDirection: true,
+-  );
+-}
+-
+-abstract final class PhosphorIconsFill {
+-  const PhosphorIconsFill._();
+-
+-  static const IconData calendarDots = IconData(
+-    0xe7b4,
+-    fontFamily: 'PhosphorFill',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData checkCircle = IconData(
+-    0xe184,
+-    fontFamily: 'PhosphorFill',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData folderOpen = IconData(
+-    0xe256,
+-    fontFamily: 'PhosphorFill',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData house = IconData(
+-    0xe2c2,
+-    fontFamily: 'PhosphorFill',
+-    matchTextDirection: true,
+-  );
+-
+-  static const IconData userCircle = IconData(
+-    0xe4c4,
+-    fontFamily: 'PhosphorFill',
+-    matchTextDirection: true,
+-  );
++abstract final class CoolIcons {
++  const CoolIcons._();
++
++  static const IconData arrowLeft = IconData(0xf141, fontFamily: 'CoolIcons');
++  static const IconData arrowRight = IconData(0xf140, fontFamily: 'CoolIcons');
++  static const IconData bed = IconData(0xf13f, fontFamily: 'CoolIcons');
++  static const IconData bell = IconData(0xf13e, fontFamily: 'CoolIcons');
++  static const IconData bellSimple = IconData(0xf13d, fontFamily: 'CoolIcons');
++  static const IconData bone = IconData(0xf13c, fontFamily: 'CoolIcons');
++  static const IconData brain = IconData(0xf13b, fontFamily: 'CoolIcons');
++  static const IconData cake = IconData(0xf13a, fontFamily: 'CoolIcons');
++  static const IconData calendarBlank = IconData(0xf139, fontFamily: 'CoolIcons');
++  static const IconData calendarCheck = IconData(0xf138, fontFamily: 'CoolIcons');
++  static const IconData calendarDots = IconData(0xf137, fontFamily: 'CoolIcons');
++  static const IconData calendarPlus = IconData(0xf136, fontFamily: 'CoolIcons');
++  static const IconData calendarX = IconData(0xf135, fontFamily: 'CoolIcons');
++  static const IconData caretLeft = IconData(0xf134, fontFamily: 'CoolIcons');
++  static const IconData caretRight = IconData(0xf133, fontFamily: 'CoolIcons');
++  static const IconData check = IconData(0xf132, fontFamily: 'CoolIcons');
++  static const IconData checkCircle = IconData(0xf131, fontFamily: 'CoolIcons');
++  static const IconData circle = IconData(0xf130, fontFamily: 'CoolIcons');
++  static const IconData circleHalf = IconData(0xf12f, fontFamily: 'CoolIcons');
++  static const IconData clock = IconData(0xf12e, fontFamily: 'CoolIcons');
++  static const IconData clockCounterClockwise = IconData(0xf12d, fontFamily: 'CoolIcons');
++  static const IconData deviceMobile = IconData(0xf12c, fontFamily: 'CoolIcons');
++  static const IconData ear = IconData(0xf12b, fontFamily: 'CoolIcons');
++  static const IconData envelopeSimple = IconData(0xf12a, fontFamily: 'CoolIcons');
++  static const IconData fileText = IconData(0xf129, fontFamily: 'CoolIcons');
++  static const IconData folderOpen = IconData(0xf128, fontFamily: 'CoolIcons');
++  static const IconData genderFemale = IconData(0xf127, fontFamily: 'CoolIcons');
++  static const IconData globe = IconData(0xf126, fontFamily: 'CoolIcons');
++  static const IconData handTap = IconData(0xf125, fontFamily: 'CoolIcons');
++  static const IconData heartbeat = IconData(0xf124, fontFamily: 'CoolIcons');
++  static const IconData house = IconData(0xf123, fontFamily: 'CoolIcons');
++  static const IconData identificationBadge = IconData(0xf122, fontFamily: 'CoolIcons');
++  static const IconData info = IconData(0xf121, fontFamily: 'CoolIcons');
++  static const IconData mapPin = IconData(0xf120, fontFamily: 'CoolIcons');
++  static const IconData megaphone = IconData(0xf11f, fontFamily: 'CoolIcons');
++  static const IconData monitor = IconData(0xf11e, fontFamily: 'CoolIcons');
++  static const IconData moonStars = IconData(0xf11d, fontFamily: 'CoolIcons');
++  static const IconData navigationArrow = IconData(0xf11c, fontFamily: 'CoolIcons');
++  static const IconData palette = IconData(0xf11b, fontFamily: 'CoolIcons');
++  static const IconData pause = IconData(0xf11a, fontFamily: 'CoolIcons');
++  static const IconData pencilSimple = IconData(0xf119, fontFamily: 'CoolIcons');
++  static const IconData personSimpleWalk = IconData(0xf118, fontFamily: 'CoolIcons');
++  static const IconData phone = IconData(0xf117, fontFamily: 'CoolIcons');
++  static const IconData phoneCall = IconData(0xf116, fontFamily: 'CoolIcons');
++  static const IconData pill = IconData(0xf115, fontFamily: 'CoolIcons');
++  static const IconData play = IconData(0xf114, fontFamily: 'CoolIcons');
++  static const IconData plus = IconData(0xf113, fontFamily: 'CoolIcons');
++  static const IconData scan = IconData(0xf112, fontFamily: 'CoolIcons');
++  static const IconData search = IconData(0xf111, fontFamily: 'CoolIcons');
++  static const IconData siren = IconData(0xf110, fontFamily: 'CoolIcons');
++  static const IconData sparkle = IconData(0xf10f, fontFamily: 'CoolIcons');
++  static const IconData starFour = IconData(0xf10e, fontFamily: 'CoolIcons');
++  static const IconData stethoscope = IconData(0xf10d, fontFamily: 'CoolIcons');
++  static const IconData sun = IconData(0xf10c, fontFamily: 'CoolIcons');
++  static const IconData testTube = IconData(0xf10b, fontFamily: 'CoolIcons');
++  static const IconData textAa = IconData(0xf10a, fontFamily: 'CoolIcons');
++  static const IconData tooth = IconData(0xf109, fontFamily: 'CoolIcons');
++  static const IconData translate = IconData(0xf108, fontFamily: 'CoolIcons');
++  static const IconData user = IconData(0xf107, fontFamily: 'CoolIcons');
++  static const IconData userCircle = IconData(0xf106, fontFamily: 'CoolIcons');
++  static const IconData usersThree = IconData(0xf105, fontFamily: 'CoolIcons');
++  static const IconData wallet = IconData(0xf104, fontFamily: 'CoolIcons');
++  static const IconData waveform = IconData(0xf103, fontFamily: 'CoolIcons');
++  static const IconData whatsappLogo = IconData(0xf102, fontFamily: 'CoolIcons');
++  static const IconData x = IconData(0xf101, fontFamily: 'CoolIcons');
+ }
+diff --git a/lib/data/demo_data.dart b/lib/data/demo_data.dart
+index 671639c..9ff25ec 100644
+--- a/lib/data/demo_data.dart
++++ b/lib/data/demo_data.dart
+@@ -14,7 +14,7 @@ const departments = <Department>[
+     nameEn: 'General OPD',
+     descriptionNp: 'हरेक दिन क्लिनिक खुल्ने समयभर MBBS मेडिकल अफिसरद्वारा OPD जाँच, परामर्श र प्राथमिक उपचार। अपोइन्टमेन्ट आवश्यक पर्दैन।',
+     descriptionEn: 'Daily MBBS medical officer OPD for checks, consultations and primary care throughout clinic hours. No appointment needed.',
+-    icon: PhosphorIconsRegular.stethoscope,
++    icon: CoolIcons.stethoscope,
+     doctorIds: ['ashish'],
+   ),
+   Department(
+@@ -23,7 +23,7 @@ const departments = <Department>[
+     nameEn: 'Internal Medicine',
+     descriptionNp: 'भित्री रोग विशेषज्ञसहित परामर्श — महिनाको दोस्रो शनिबार; आइत–शुक्र दिउँसो पनि उपलब्ध।',
+     descriptionEn: 'Internal medicine consultation with a specialist — 2nd Saturday; also available Sunday–Friday afternoons.',
+-    icon: PhosphorIconsRegular.heartbeat,
++    icon: CoolIcons.heartbeat,
+     doctorIds: ['navin'],
+   ),
+   Department(
+@@ -32,7 +32,7 @@ const departments = <Department>[
+     nameEn: 'Gynecology',
+     descriptionNp: 'गर्भवती जाँच, स्त्री रोग परामर्श र परिवार नियोजन — महिनाको दोस्रो शनिबार।',
+     descriptionEn: 'Pregnancy checks, gynecology consultations and family planning — 2nd Saturday of the month.',
+-    icon: PhosphorIconsRegular.genderFemale,
++    icon: CoolIcons.genderFemale,
+     doctorIds: ['sunita'],
+   ),
+   Department(
+@@ -41,7 +41,7 @@ const departments = <Department>[
+     nameEn: 'Digital X-Ray',
+     descriptionNp: 'डिजिटल एक्स-रे सेवा, दैनिक उपलब्ध।',
+     descriptionEn: 'Digital X-ray service, available daily.',
+-    icon: PhosphorIconsRegular.scan,
++    icon: CoolIcons.scan,
+   ),
+   Department(
+     id: 'dental',
+@@ -50,7 +50,7 @@ const departments = <Department>[
+     descriptionNp: 'दाँत जाँच, सफाइ र दन्त उपचार सेवा। बिहान सिधै आउन सकिन्छ।',
+     descriptionEn:
+         'Dental checks, cleaning and treatment. Walk in during morning hours.',
+-    icon: PhosphorIconsRegular.tooth,
++    icon: CoolIcons.tooth,
+     doctorIds: ['manish'],
+   ),
+   Department(
+@@ -60,7 +60,7 @@ const departments = <Department>[
+     descriptionNp: 'रगत, पिसाब तथा अन्य नियमित परीक्षण। रिपोर्ट सोही दिन।',
+     descriptionEn:
+         'Blood, urine and other routine tests. Reports available the same day.',
+-    icon: PhosphorIconsRegular.testTube,
++    icon: CoolIcons.testTube,
+   ),
+   Department(
+     id: 'ent',
+@@ -69,7 +69,7 @@ const departments = <Department>[
+     descriptionNp:
+         'नाक, कान र घाँटी सम्बन्धी जाँच तथा उपचार — महिनाको पहिलो शनिबार।',
+     descriptionEn: 'Ear, nose and throat care — 1st Saturday of the month.',
+-    icon: PhosphorIconsRegular.ear,
++    icon: CoolIcons.ear,
+     doctorIds: ['bikas'],
+   ),
+   Department(
+@@ -78,7 +78,7 @@ const departments = <Department>[
+     nameEn: 'Mental Health',
+     descriptionNp: 'मनोरोग विशेषज्ञद्वारा मानसिक स्वास्थ्य परामर्श — महिनाको अन्तिम शनिबार।',
+     descriptionEn: 'Mental health consultation with a psychiatrist — last Saturday of the month.',
+-    icon: PhosphorIconsRegular.brain,
++    icon: CoolIcons.brain,
+     doctorIds: ['suman'],
+   ),
+   Department(
+@@ -88,7 +88,7 @@ const departments = <Department>[
+     descriptionNp:
+         'छाला सम्बन्धी समस्या, एलर्जी र उपचार परामर्श — महिनाको पहिलो शनिबार।',
+     descriptionEn: 'Skin problems, allergies and treatment consultation — 1st Saturday of the month.',
+-    icon: PhosphorIconsRegular.sparkle,
++    icon: CoolIcons.sparkle,
+     doctorIds: ['pratibha'],
+   ),
+   Department(
+@@ -98,7 +98,7 @@ const departments = <Department>[
+     descriptionNp: 'भिडियो एक्स-रे अर्थात् अल्ट्रासाउन्ड तथा एनोमली स्क्यान सेवा — महिनाको दुई पटक।',
+     descriptionEn:
+         'Video X-ray (ultrasound) and anomaly scans — twice every month.',
+-    icon: PhosphorIconsRegular.monitor,
++    icon: CoolIcons.monitor,
+   ),
+   Department(
+     id: 'ecg',
+@@ -106,7 +106,7 @@ const departments = <Department>[
+     nameEn: 'ECG',
+     descriptionNp: 'मुटुको विद्युतीय गतिविधि जाँच सेवा।',
+     descriptionEn: 'Heart electrical activity test.',
+-    icon: PhosphorIconsRegular.waveform,
++    icon: CoolIcons.waveform,
+   ),
+   Department(
+     id: 'echo',
+@@ -116,7 +116,7 @@ const departments = <Department>[
+         'इकोकार्डियोग्राफी सेवा — मुटु विशेषज्ञसहित महिनाको अन्तिम शनिबार।',
+     descriptionEn:
+         'Echocardiography with a cardiologist — last Saturday of the month.',
+-    icon: PhosphorIconsRegular.heartbeat,
++    icon: CoolIcons.heartbeat,
+     doctorIds: ['sujan'],
+   ),
+   Department(
+@@ -125,7 +125,7 @@ const departments = <Department>[
+     nameEn: 'Family Planning',
+     descriptionNp: 'परिवार नियोजन साधन तथा परामर्श सेवा।',
+     descriptionEn: 'Family planning methods and counselling.',
+-    icon: PhosphorIconsRegular.usersThree,
++    icon: CoolIcons.usersThree,
+     doctorIds: ['sunita'],
+   ),
+   Department(
+@@ -136,7 +136,7 @@ const departments = <Department>[
+         'दुखाइ र चोटपटकका लागि फिजियोथेरापी सेवा। साँझ सिधै आउन सकिन्छ।',
+     descriptionEn:
+         'Physiotherapy for pain and injuries. Walk in during evening hours.',
+-    icon: PhosphorIconsRegular.personSimpleWalk,
++    icon: CoolIcons.personSimpleWalk,
+     doctorIds: ['sarita'],
+   ),
+   Department(
+@@ -146,7 +146,7 @@ const departments = <Department>[
+     descriptionNp:
+         'हाड, जोर्नी र नसा सम्बन्धी जाँच तथा उपचार — महिनाको तेस्रो शनिबार।',
+     descriptionEn: 'Bone, joint and nerve care — 3rd Saturday of the month.',
+-    icon: PhosphorIconsRegular.bone,
++    icon: CoolIcons.bone,
+     doctorIds: ['rajan'],
+   ),
+   Department(
+@@ -156,7 +156,7 @@ const departments = <Department>[
+     descriptionNp: 'क्लिनिक खुल्ने समयभर आपत्कालीन उपचार। आपत्कालमा सिधै फोन गर्नुहोस्: ०१०-५६१६०६',
+     descriptionEn:
+         'Emergency care during clinic hours. For urgent help, call 010-561606.',
+-    icon: PhosphorIconsRegular.siren,
++    icon: CoolIcons.siren,
+   ),
+   Department(
+     id: 'pharmacy',
+@@ -165,7 +165,7 @@ const departments = <Department>[
+     descriptionNp: 'OPD नजिकै पूर्ण रूपमा उपलब्ध नैतिक फार्मेसी।',
+     descriptionEn:
+         'A fully stocked, ethical pharmacy right beside the OPD floor.',
+-    icon: PhosphorIconsRegular.pill,
++    icon: CoolIcons.pill,
+   ),
+   Department(
+     id: 'daycare',
+@@ -173,7 +173,7 @@ const departments = <Department>[
+     nameEn: 'ICU & Day Care',
+     descriptionNp: 'आधुनिक उपकरण र तालिमप्राप्त नर्सिङ टिमसहितको निगरानी तथा डे केयर सेवा।',
+     descriptionEn: 'Monitored care and day care with modern equipment and trained nursing staff.',
+-    icon: PhosphorIconsRegular.bed,
++    icon: CoolIcons.bed,
+   ),
+ ];
+ 
+diff --git a/lib/screens/appointment_detail_screen.dart b/lib/screens/appointment_detail_screen.dart
+index 1cdacc9..d82aa86 100644
+--- a/lib/screens/appointment_detail_screen.dart
++++ b/lib/screens/appointment_detail_screen.dart
+@@ -74,7 +74,8 @@ class AppointmentDetailScreen extends StatelessWidget {
+         : scheme.onSurfaceVariant;
+ 
+     return Scaffold(
+-      appBar: AppBar(title: Text(l10n.appointmentDetailTitle)),
++      appBar: AppBar(
++        leading: const AppBackButton(),title: Text(l10n.appointmentDetailTitle)),
+       body: AppRefreshView(
+         onRefresh: demoRefresh,
+         child: ListView(
+@@ -101,7 +102,7 @@ class AppointmentDetailScreen extends StatelessWidget {
+                     DoctorAvatar(doctor: doctor, size: 56)
+                   else
+                     TonalIcon(
+-                      icon: PhosphorIconsRegular.stethoscope,
++                      icon: CoolIcons.stethoscope,
+                       size: 56,
+                       iconSize: 26,
+                     ),
+@@ -138,7 +139,7 @@ class AppointmentDetailScreen extends StatelessWidget {
+                   ),
+                   if (doctor != null)
+                     Icon(
+-                      PhosphorIconsRegular.caretRight,
++                      CoolIcons.caretRight,
+                       size: 18,
+                       color: scheme.onSurfaceVariant,
+                     ),
+@@ -156,7 +157,7 @@ class AppointmentDetailScreen extends StatelessWidget {
+                 crossAxisAlignment: CrossAxisAlignment.start,
+                 children: [
+                   Icon(
+-                    PhosphorIconsRegular.calendarBlank,
++                    CoolIcons.calendarBlank,
+                     size: 20,
+                     color: dateForeground,
+                   ),
+@@ -188,7 +189,7 @@ class AppointmentDetailScreen extends StatelessWidget {
+                     crossAxisAlignment: CrossAxisAlignment.end,
+                     children: [
+                       Icon(
+-                        PhosphorIconsRegular.clock,
++                        CoolIcons.clock,
+                         size: 17,
+                         color: dateForeground,
+                       ),
+@@ -246,7 +247,7 @@ class AppointmentDetailScreen extends StatelessWidget {
+                   }
+                 },
+                 icon: const Icon(
+-                  PhosphorIconsRegular.clockCounterClockwise,
++                  CoolIcons.clockCounterClockwise,
+                   size: 18,
+                 ),
+                 label: Text(l10n.reschedule),
+@@ -258,14 +259,14 @@ class AppointmentDetailScreen extends StatelessWidget {
+                   foregroundColor: scheme.error,
+                   side: BorderSide(color: scheme.error.withValues(alpha: 0.4)),
+                 ),
+-                icon: const Icon(PhosphorIconsRegular.x, size: 18),
++                icon: const Icon(CoolIcons.x, size: 18),
+                 label: Text(l10n.cancelAppointment),
+               ),
+               const SizedBox(height: 10),
+             ],
+             OutlinedButton.icon(
+               onPressed: () => callClinic(context),
+-              icon: const Icon(PhosphorIconsRegular.phoneCall, size: 18),
++              icon: const Icon(CoolIcons.phoneCall, size: 18),
+               label: Text(l10n.callClinic),
+             ),
+           ],
+diff --git a/lib/screens/appointments_screen.dart b/lib/screens/appointments_screen.dart
+index 97ea333..370682b 100644
+--- a/lib/screens/appointments_screen.dart
++++ b/lib/screens/appointments_screen.dart
+@@ -64,7 +64,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
+               width: double.infinity,
+               child: FilledButton.icon(
+                 onPressed: _book,
+-                icon: const Icon(PhosphorIconsRegular.plus, size: 20),
++                icon: const Icon(CoolIcons.plus, size: 20),
+                 label: Text(l10n.newAppointment),
+               ),
+             ),
+@@ -89,20 +89,20 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
+                     onRefresh: demoRefresh,
+                     child: _showUpcoming
+                         ? EmptyState(
+-                            icon: PhosphorIconsRegular.calendarCheck,
++                            icon: CoolIcons.calendarCheck,
+                             title: l10n.emptyUpcomingTitle,
+                             message: l10n.emptyUpcomingMessage,
+                             action: FilledButton.icon(
+                               onPressed: _book,
+                               icon: const Icon(
+-                                PhosphorIconsRegular.plus,
++                                CoolIcons.plus,
+                                 size: 18,
+                               ),
+                               label: Text(l10n.bookSlot),
+                             ),
+                           )
+                         : EmptyState(
+-                            icon: PhosphorIconsRegular.clockCounterClockwise,
++                            icon: CoolIcons.clockCounterClockwise,
+                             title: l10n.emptyPastTitle,
+                             message: l10n.emptyPastMessage,
+                           ),
+@@ -205,7 +205,7 @@ class _AppointmentCard extends StatelessWidget {
+                 DoctorAvatar(doctor: doctor, size: 50)
+               else
+                 TonalIcon(
+-                  icon: PhosphorIconsRegular.stethoscope,
++                  icon: CoolIcons.stethoscope,
+                   size: 50,
+                   iconSize: 24,
+                 ),
+@@ -253,7 +253,7 @@ class _AppointmentCard extends StatelessWidget {
+               crossAxisAlignment: CrossAxisAlignment.start,
+               children: [
+                 Icon(
+-                  PhosphorIconsRegular.calendarBlank,
++                  CoolIcons.calendarBlank,
+                   size: 17,
+                   color: dateForeground,
+                 ),
+@@ -285,7 +285,7 @@ class _AppointmentCard extends StatelessWidget {
+                   crossAxisAlignment: CrossAxisAlignment.end,
+                   children: [
+                     Icon(
+-                      PhosphorIconsRegular.clock,
++                      CoolIcons.clock,
+                       size: 15,
+                       color: dateForeground,
+                     ),
+@@ -337,7 +337,7 @@ class _AppointmentCard extends StatelessWidget {
+                       fontWeight: FontWeight.w600,
+                     ),
+                   ),
+-                  icon: const Icon(PhosphorIconsRegular.x, size: 15),
++                  icon: const Icon(CoolIcons.x, size: 15),
+                   label: Text(l10n.cancelAppointment),
+                 ),
+               ],
+diff --git a/lib/screens/booking_screen.dart b/lib/screens/booking_screen.dart
+index bcfce55..a5bd632 100644
+--- a/lib/screens/booking_screen.dart
++++ b/lib/screens/booking_screen.dart
+@@ -259,7 +259,7 @@ class _BookingScreenState extends State<BookingScreen> {
+         final dialogL10n = L10n.of(dialogContext);
+         return AlertDialog(
+           icon: TonalIcon(
+-            icon: PhosphorIconsRegular.check,
++            icon: CoolIcons.check,
+             size: 56,
+             iconSize: 28,
+             background: scheme.primary,
+@@ -358,7 +358,8 @@ class _BookingScreenState extends State<BookingScreen> {
+         await _confirmDiscard();
+       },
+       child: Scaffold(
+-        appBar: AppBar(title: Text(l10n.bookingNew)),
++        appBar: AppBar(
++        leading: const AppBackButton(),title: Text(l10n.bookingNew)),
+         body: AppRefreshView(
+           onRefresh: demoRefresh,
+           child: Form(
+@@ -380,7 +381,7 @@ class _BookingScreenState extends State<BookingScreen> {
+                 ),
+                 const SizedBox(height: 12),
+                 _InfoNote(
+-                  icon: PhosphorIconsRegular.calendarCheck,
++                  icon: CoolIcons.calendarCheck,
+                   text: l10n.bookingSaturdayNote,
+                 ),
+                 const SizedBox(height: 24),
+@@ -437,7 +438,7 @@ class _BookingScreenState extends State<BookingScreen> {
+                       minimumSize: const Size(0, AppTokens.minTap),
+                     ),
+                     icon: const Icon(
+-                      PhosphorIconsRegular.calendarDots,
++                      CoolIcons.calendarDots,
+                       size: 17,
+                     ),
+                     label: Text(l10n.viewSaturdaySchedule),
+@@ -462,7 +463,7 @@ class _BookingScreenState extends State<BookingScreen> {
+                   textCapitalization: TextCapitalization.words,
+                   decoration: InputDecoration(
+                     hintText: l10n.bookingPatientNameHint,
+-                    prefixIcon: const Icon(PhosphorIconsRegular.user),
++                    prefixIcon: const Icon(CoolIcons.user),
+                   ),
+                   validator: (value) {
+                     if (value == null || value.trim().isEmpty) {
+@@ -478,7 +479,7 @@ class _BookingScreenState extends State<BookingScreen> {
+                   textInputAction: TextInputAction.done,
+                   decoration: InputDecoration(
+                     hintText: l10n.bookingPhoneHint,
+-                    prefixIcon: const Icon(PhosphorIconsRegular.phone),
++                    prefixIcon: const Icon(CoolIcons.phone),
+                   ),
+                   validator: (value) {
+                     final digits = (value ?? '').replaceAll(
+@@ -675,8 +676,8 @@ class _DoctorChoice extends StatelessWidget {
+                 const SizedBox(width: 8),
+                 Icon(
+                   selected
+-                      ? PhosphorIconsFill.checkCircle
+-                      : PhosphorIconsRegular.circle,
++                      ? CoolIcons.checkCircle
++                      : CoolIcons.circle,
+                   size: 22,
+                   color: selected ? scheme.primary : scheme.outline,
+                 ),
+diff --git a/lib/screens/contact_screen.dart b/lib/screens/contact_screen.dart
+index 4770d31..34dc340 100644
+--- a/lib/screens/contact_screen.dart
++++ b/lib/screens/contact_screen.dart
+@@ -24,7 +24,8 @@ class ContactScreen extends StatelessWidget {
+     final isSaturday = now.weekday == DateTime.saturday;
+ 
+     return Scaffold(
+-      appBar: AppBar(title: Text(l10n.contactTitle)),
++      appBar: AppBar(
++        leading: const AppBackButton(),title: Text(l10n.contactTitle)),
+       body: AppRefreshView(
+         onRefresh: demoRefresh,
+         child: ListView(
+@@ -90,7 +91,7 @@ class ContactScreen extends StatelessWidget {
+                       width: width,
+                       height: AppTokens.scaled(context, 112),
+                       child: _ContactAction(
+-                        icon: PhosphorIconsRegular.phoneCall,
++                        icon: CoolIcons.phoneCall,
+                         label: l10n.contactCall,
+                         detail: l10n.digits(Clinic.phonePrimaryDisplay),
+                         accent: true,
+@@ -101,7 +102,7 @@ class ContactScreen extends StatelessWidget {
+                       width: width,
+                       height: AppTokens.scaled(context, 112),
+                       child: _ContactAction(
+-                        icon: PhosphorIconsRegular.whatsappLogo,
++                        icon: CoolIcons.whatsappLogo,
+                         label: l10n.contactWhatsapp,
+                         detail: l10n.digits(Clinic.whatsappDisplay),
+                         onTap: () => messageClinic(context),
+@@ -111,7 +112,7 @@ class ContactScreen extends StatelessWidget {
+                       width: width,
+                       height: AppTokens.scaled(context, 112),
+                       child: _ContactAction(
+-                        icon: PhosphorIconsRegular.envelopeSimple,
++                        icon: CoolIcons.envelopeSimple,
+                         label: l10n.contactEmail,
+                         detail: l10n.contactSendEmail,
+                         onTap: () => emailClinic(context),
+@@ -121,7 +122,7 @@ class ContactScreen extends StatelessWidget {
+                       width: width,
+                       height: AppTokens.scaled(context, 112),
+                       child: _ContactAction(
+-                        icon: PhosphorIconsRegular.mapPin,
++                        icon: CoolIcons.mapPin,
+                         label: l10n.contactMap,
+                         detail: l10n.contactOpenMap,
+                         onTap: () => openClinicMap(context),
+@@ -168,7 +169,7 @@ class ContactScreen extends StatelessWidget {
+                   ),
+                   minimumSize: const Size(0, AppTokens.minTap),
+                 ),
+-                icon: const Icon(PhosphorIconsRegular.calendarDots, size: 17),
++                icon: const Icon(CoolIcons.calendarDots, size: 17),
+                 label: Text(l10n.viewSaturdaySchedule),
+               ),
+             ),
+@@ -180,37 +181,37 @@ class ContactScreen extends StatelessWidget {
+               child: Column(
+                 children: [
+                   _ContactRow(
+-                    icon: PhosphorIconsRegular.phone,
++                    icon: CoolIcons.phone,
+                     value:
+                         '${l10n.digits(Clinic.phonePrimaryDisplay)} ${l10n.phoneClinicSuffix}',
+                   ),
+                   const SizedBox(height: 14),
+                   _ContactRow(
+-                    icon: PhosphorIconsRegular.deviceMobile,
++                    icon: CoolIcons.deviceMobile,
+                     value:
+                         '${l10n.digits(Clinic.phoneMobileDisplay)} ${l10n.phoneMobileSuffix}',
+                   ),
+                   const SizedBox(height: 14),
+                   _ContactRow(
+-                    icon: PhosphorIconsRegular.whatsappLogo,
++                    icon: CoolIcons.whatsappLogo,
+                     value:
+                         '${l10n.digits(Clinic.whatsappDisplay)} ${l10n.contactWhatsapp}',
+                   ),
+                   const SizedBox(height: 14),
+                   _ContactRow(
+-                    icon: PhosphorIconsRegular.envelopeSimple,
++                    icon: CoolIcons.envelopeSimple,
+                     value: Clinic.email,
+                     onTap: () => emailClinic(context),
+                   ),
+                   const SizedBox(height: 14),
+                   _ContactRow(
+-                    icon: PhosphorIconsRegular.globe,
++                    icon: CoolIcons.globe,
+                     value: Clinic.website,
+                     onTap: () => openClinicWebsite(context),
+                   ),
+                   const SizedBox(height: 14),
+                   _ContactRow(
+-                    icon: PhosphorIconsRegular.mapPin,
++                    icon: CoolIcons.mapPin,
+                     value: Clinic.address(language),
+                     onTap: () => openClinicMap(context),
+                   ),
+@@ -353,7 +354,7 @@ class _ContactRow extends StatelessWidget {
+         Expanded(child: Text(value, style: theme.textTheme.bodyMedium)),
+         if (onTap != null)
+           Icon(
+-            PhosphorIconsRegular.caretRight,
++            CoolIcons.caretRight,
+             size: 16,
+             color: scheme.onSurfaceVariant,
+           ),
+diff --git a/lib/screens/department_detail_screen.dart b/lib/screens/department_detail_screen.dart
+index d3d5d9b..3f8b180 100644
+--- a/lib/screens/department_detail_screen.dart
++++ b/lib/screens/department_detail_screen.dart
+@@ -29,7 +29,8 @@ class DepartmentDetailScreen extends StatelessWidget {
+     );
+ 
+     return Scaffold(
+-      appBar: AppBar(title: Text(department.displayName)),
++      appBar: AppBar(
++        leading: const AppBackButton(),title: Text(department.displayName)),
+       body: AppRefreshView(
+         onRefresh: demoRefresh,
+         child: ListView(
+@@ -98,7 +99,7 @@ class DepartmentDetailScreen extends StatelessWidget {
+                         ),
+                       ),
+                       Icon(
+-                        PhosphorIconsRegular.caretRight,
++                        CoolIcons.caretRight,
+                         color: scheme.onSurfaceVariant,
+                       ),
+                     ],
+@@ -114,7 +115,7 @@ class DepartmentDetailScreen extends StatelessWidget {
+                   crossAxisAlignment: CrossAxisAlignment.start,
+                   children: [
+                     Icon(
+-                      PhosphorIconsRegular.info,
++                      CoolIcons.info,
+                       size: 20,
+                       color: scheme.onSurfaceVariant,
+                     ),
+@@ -140,7 +141,7 @@ class DepartmentDetailScreen extends StatelessWidget {
+                   crossAxisAlignment: CrossAxisAlignment.start,
+                   children: [
+                     Icon(
+-                      PhosphorIconsRegular.info,
++                      CoolIcons.info,
+                       size: 20,
+                       color: scheme.onSurfaceVariant,
+                     ),
+@@ -165,7 +166,7 @@ class DepartmentDetailScreen extends StatelessWidget {
+                   context,
+                   departmentId: department.id,
+                 ),
+-                icon: const Icon(PhosphorIconsRegular.calendarPlus, size: 18),
++                icon: const Icon(CoolIcons.calendarPlus, size: 18),
+                 label: Text(l10n.bookTime),
+               ),
+             const SizedBox(height: 12),
+diff --git a/lib/screens/doctor_calendar_screen.dart b/lib/screens/doctor_calendar_screen.dart
+index 8096910..e43205f 100644
+--- a/lib/screens/doctor_calendar_screen.dart
++++ b/lib/screens/doctor_calendar_screen.dart
+@@ -137,7 +137,8 @@ class _DoctorCalendarScreenState extends State<DoctorCalendarScreen> {
+     ];
+ 
+     return Scaffold(
+-      appBar: AppBar(title: Text(l10n.doctorCalendarTitle)),
++      appBar: AppBar(
++        leading: const AppBackButton(),title: Text(l10n.doctorCalendarTitle)),
+       body: ListView(
+         padding: const EdgeInsets.fromLTRB(
+           AppTokens.gutter,
+@@ -165,7 +166,7 @@ class _DoctorCalendarScreenState extends State<DoctorCalendarScreen> {
+                 Row(
+                   children: [
+                     _HeaderIconButton(
+-                      icon: PhosphorIconsRegular.caretLeft,
++                      icon: CoolIcons.caretLeft,
+                       tooltip: l10n.prevMonth,
+                       onPressed: canPrev ? () => _shift(-1) : null,
+                     ),
+@@ -191,7 +192,7 @@ class _DoctorCalendarScreenState extends State<DoctorCalendarScreen> {
+                       ),
+                     ),
+                     _HeaderIconButton(
+-                      icon: PhosphorIconsRegular.caretRight,
++                      icon: CoolIcons.caretRight,
+                       tooltip: l10n.nextMonth,
+                       onPressed: canNext ? () => _shift(1) : null,
+                     ),
+@@ -209,7 +210,7 @@ class _DoctorCalendarScreenState extends State<DoctorCalendarScreen> {
+                     child: Row(
+                       children: [
+                         Icon(
+-                          PhosphorIconsRegular.starFour,
++                          CoolIcons.starFour,
+                           size: 14,
+                           color: scheme.onPrimary.withValues(alpha: 0.9),
+                         ),
+@@ -283,7 +284,7 @@ class _DoctorCalendarScreenState extends State<DoctorCalendarScreen> {
+             crossAxisAlignment: CrossAxisAlignment.start,
+             children: [
+               Icon(
+-                PhosphorIconsRegular.handTap,
++                CoolIcons.handTap,
+                 size: 18,
+                 color: scheme.onSurfaceVariant,
+               ),
+@@ -462,7 +463,7 @@ class _DayCell extends StatelessWidget {
+                   )
+                 : hasAppointment
+                 ? Icon(
+-                    PhosphorIconsRegular.calendarCheck,
++                    CoolIcons.calendarCheck,
+                     size: 13,
+                     color: scheme.primary,
+                   )
+@@ -566,7 +567,7 @@ class _SheetDoctorTile extends StatelessWidget {
+             ),
+             const SizedBox(width: 8),
+             Icon(
+-              PhosphorIconsRegular.caretRight,
++              CoolIcons.caretRight,
+               size: 18,
+               color: scheme.onSurfaceVariant,
+             ),
+diff --git a/lib/screens/doctor_detail_screen.dart b/lib/screens/doctor_detail_screen.dart
+index 3fe3b32..a4e6ae9 100644
+--- a/lib/screens/doctor_detail_screen.dart
++++ b/lib/screens/doctor_detail_screen.dart
+@@ -26,7 +26,8 @@ class DoctorDetailScreen extends StatelessWidget {
+     final department = departmentById(doctor.departmentId);
+ 
+     return Scaffold(
+-      appBar: AppBar(title: Text(l10n.doctorDetails)),
++      appBar: AppBar(
++        leading: const AppBackButton(),title: Text(l10n.doctorDetails)),
+       body: AppRefreshView(
+         onRefresh: demoRefresh,
+         child: ListView(
+@@ -96,25 +97,25 @@ class DoctorDetailScreen extends StatelessWidget {
+               child: Column(
+                 children: [
+                   _InfoRow(
+-                    icon: PhosphorIconsRegular.stethoscope,
++                    icon: CoolIcons.stethoscope,
+                     label: l10n.departmentLabel,
+                     value: department.displayName,
+                   ),
+                   const SizedBox(height: 14),
+                   _InfoRow(
+-                    icon: PhosphorIconsRegular.clock,
++                    icon: CoolIcons.clock,
+                     label: l10n.availabilityLabel,
+                     value: doctor.availability(language),
+                   ),
+                   const SizedBox(height: 14),
+                   _InfoRow(
+-                    icon: PhosphorIconsRegular.wallet,
++                    icon: CoolIcons.wallet,
+                     label: l10n.consultationFee,
+                     value: l10n.money(doctor.fee),
+                   ),
+                   const SizedBox(height: 14),
+                   _InfoRow(
+-                    icon: PhosphorIconsRegular.mapPin,
++                    icon: CoolIcons.mapPin,
+                     label: l10n.locationLabel,
+                     value: Clinic.address(language),
+                   ),
+@@ -138,7 +139,7 @@ class DoctorDetailScreen extends StatelessWidget {
+                     ),
+                     minimumSize: const Size(0, AppTokens.minTap),
+                   ),
+-                  icon: const Icon(PhosphorIconsRegular.calendarDots, size: 17),
++                  icon: const Icon(CoolIcons.calendarDots, size: 17),
+                   label: Text(l10n.viewSaturdaySchedule),
+                 ),
+               ),
+@@ -158,7 +159,7 @@ class DoctorDetailScreen extends StatelessWidget {
+                   crossAxisAlignment: CrossAxisAlignment.start,
+                   children: [
+                     Icon(
+-                      PhosphorIconsRegular.megaphone,
++                      CoolIcons.megaphone,
+                       size: 20,
+                       color: scheme.onSecondaryContainer,
+                     ),
+@@ -184,7 +185,7 @@ class DoctorDetailScreen extends StatelessWidget {
+                   departmentId: doctor.departmentId,
+                   doctorId: doctor.id,
+                 ),
+-                icon: const Icon(PhosphorIconsRegular.calendarPlus, size: 18),
++                icon: const Icon(CoolIcons.calendarPlus, size: 18),
+                 label: Text(l10n.bookAppointment),
+               ),
+               const SizedBox(height: 10),
+@@ -202,7 +203,7 @@ class DoctorDetailScreen extends StatelessWidget {
+                   crossAxisAlignment: CrossAxisAlignment.start,
+                   children: [
+                     Icon(
+-                      PhosphorIconsRegular.info,
++                      CoolIcons.info,
+                       size: 20,
+                       color: scheme.onSurfaceVariant,
+                     ),
+diff --git a/lib/screens/edit_profile_screen.dart b/lib/screens/edit_profile_screen.dart
+index 7d5bb3b..6269b58 100644
+--- a/lib/screens/edit_profile_screen.dart
++++ b/lib/screens/edit_profile_screen.dart
+@@ -120,7 +120,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
+         if (!didPop) await _confirmDiscard();
+       },
+       child: Scaffold(
+-      appBar: AppBar(title: Text(l10n.editProfileTitle)),
++      appBar: AppBar(
++        leading: const AppBackButton(),title: Text(l10n.editProfileTitle)),
+       body: AppRefreshView(
+         onRefresh: demoRefresh,
+         child: Form(
+@@ -147,7 +148,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
+                 textCapitalization: TextCapitalization.words,
+                 decoration: InputDecoration(
+                   hintText: l10n.fullNameHint,
+-                  prefixIcon: const Icon(PhosphorIconsRegular.user),
++                  prefixIcon: const Icon(CoolIcons.user),
+                 ),
+                 validator: (value) {
+                   if (value == null || value.trim().isEmpty) {
+@@ -163,7 +164,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
+                 textInputAction: TextInputAction.next,
+                 decoration: InputDecoration(
+                   hintText: l10n.phoneHint,
+-                  prefixIcon: const Icon(PhosphorIconsRegular.phone),
++                  prefixIcon: const Icon(CoolIcons.phone),
+                 ),
+                 validator: (value) {
+                   final digits = (value ?? '').replaceAll(
+@@ -183,7 +184,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
+                 textInputAction: TextInputAction.next,
+                 decoration: InputDecoration(
+                   hintText: l10n.ageHint,
+-                  prefixIcon: const Icon(PhosphorIconsRegular.cake),
++                  prefixIcon: const Icon(CoolIcons.cake),
+                 ),
+                 validator: (value) {
+                   final text = (value ?? '').trim();
+@@ -232,7 +233,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
+                 maxLines: 2,
+                 decoration: InputDecoration(
+                   hintText: l10n.addressHint,
+-                  prefixIcon: const Icon(PhosphorIconsRegular.mapPin),
++                  prefixIcon: const Icon(CoolIcons.mapPin),
+                 ),
+               ),
+               const SizedBox(height: 20),
+@@ -245,7 +246,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
+                 child: Row(
+                   children: [
+                     Icon(
+-                      PhosphorIconsRegular.identificationBadge,
++                      CoolIcons.identificationBadge,
+                       size: 20,
+                       color: scheme.onSurfaceVariant,
+                     ),
+diff --git a/lib/screens/home_screen.dart b/lib/screens/home_screen.dart
+index b075cd1..d3686ae 100644
+--- a/lib/screens/home_screen.dart
++++ b/lib/screens/home_screen.dart
+@@ -120,7 +120,7 @@ class HomeScreen extends StatelessWidget {
+                         ),
+                       ),
+                       tooltip: l10n.notificationsLabel,
+-                      icon: const Icon(PhosphorIconsRegular.bell),
++                      icon: const Icon(CoolIcons.bell),
+                     ),
+                   ),
+                 ],
+@@ -134,28 +134,28 @@ class HomeScreen extends StatelessWidget {
+                 children: [
+                   Expanded(
+                     child: _QuickAction(
+-                      icon: PhosphorIconsRegular.calendarPlus,
++                      icon: CoolIcons.calendarPlus,
+                       label: l10n.quickBook,
+                       onTap: () => _startBooking(context),
+                     ),
+                   ),
+                   Expanded(
+                     child: _QuickAction(
+-                      icon: PhosphorIconsRegular.stethoscope,
++                      icon: CoolIcons.stethoscope,
+                       label: l10n.quickDoctors,
+                       onTap: () => _openServices(context),
+                     ),
+                   ),
+                   Expanded(
+                     child: _QuickAction(
+-                      icon: PhosphorIconsRegular.fileText,
++                      icon: CoolIcons.fileText,
+                       label: l10n.quickReports,
+                       onTap: () => onOpenTab(2),
+                     ),
+                   ),
+                   Expanded(
+                     child: _QuickAction(
+-                      icon: PhosphorIconsRegular.phoneCall,
++                      icon: CoolIcons.phoneCall,
+                       label: l10n.quickContact,
+                       onTap: () => _openContact(context),
+                     ),
+@@ -172,7 +172,7 @@ class HomeScreen extends StatelessWidget {
+                 child: Row(
+                   children: [
+                     TonalIcon(
+-                      icon: PhosphorIconsRegular.clock,
++                      icon: CoolIcons.clock,
+                       background: isOpen
+                           ? scheme.primary
+                           : scheme.surfaceContainerHigh,
+@@ -217,7 +217,7 @@ class HomeScreen extends StatelessWidget {
+                       ),
+                     ),
+                     Icon(
+-                      PhosphorIconsRegular.caretRight,
++                      CoolIcons.caretRight,
+                       color: scheme.onSurfaceVariant,
+                     ),
+                   ],
+@@ -298,7 +298,7 @@ class HomeScreen extends StatelessWidget {
+                           minimumSize: const Size(0, AppTokens.minTap),
+                         ),
+                         icon: const Icon(
+-                          PhosphorIconsRegular.phoneCall,
++                          CoolIcons.phoneCall,
+                           size: 18,
+                         ),
+                         label: Text(l10n.callClinic),
+@@ -312,7 +312,7 @@ class HomeScreen extends StatelessWidget {
+                           minimumSize: const Size(0, AppTokens.minTap),
+                         ),
+                         icon: const Icon(
+-                          PhosphorIconsRegular.navigationArrow,
++                          CoolIcons.navigationArrow,
+                           size: 18,
+                         ),
+                         label: Text(l10n.directions),
+@@ -479,7 +479,7 @@ class _SaturdaySpotlightCard extends StatelessWidget {
+                   ),
+                   const SizedBox(width: 8),
+                   Icon(
+-                    PhosphorIconsRegular.caretRight,
++                    CoolIcons.caretRight,
+                     size: 17,
+                     color: scheme.onSurfaceVariant,
+                   ),
+@@ -491,7 +491,7 @@ class _SaturdaySpotlightCard extends StatelessWidget {
+           Row(
+             children: [
+               Icon(
+-                PhosphorIconsRegular.calendarDots,
++                CoolIcons.calendarDots,
+                 size: 16,
+                 color: scheme.primary,
+               ),
+@@ -658,7 +658,7 @@ class _DoctorCard extends StatelessWidget {
+           Row(
+             children: [
+               Icon(
+-                PhosphorIconsRegular.clock,
++                CoolIcons.clock,
+                 size: 14,
+                 color: scheme.onSurfaceVariant,
+               ),
+diff --git a/lib/screens/notifications_screen.dart b/lib/screens/notifications_screen.dart
+index 95f0546..ea9eb03 100644
+--- a/lib/screens/notifications_screen.dart
++++ b/lib/screens/notifications_screen.dart
+@@ -37,6 +37,7 @@ class NotificationsScreen extends StatelessWidget {
+ 
+     return Scaffold(
+       appBar: AppBar(
++        leading: const AppBackButton(),
+         title: Text(l10n.notificationsTitle),
+         actions: [
+           if (state.unreadCount > 0)
+@@ -51,7 +52,7 @@ class NotificationsScreen extends StatelessWidget {
+           ? AppRefreshEmpty(
+               onRefresh: demoRefresh,
+               child: EmptyState(
+-                icon: PhosphorIconsRegular.bellSimple,
++                icon: CoolIcons.bellSimple,
+                 title: l10n.noNotificationsTitle,
+                 message: l10n.noNotificationsMessage,
+               ),
+@@ -241,9 +242,9 @@ class _NotificationCard extends StatelessWidget {
+ 
+   IconData _iconFor(String kind) {
+     return switch (kind) {
+-      'appointment' => PhosphorIconsRegular.calendarCheck,
+-      'record' => PhosphorIconsRegular.testTube,
+-      _ => PhosphorIconsRegular.megaphone,
++      'appointment' => CoolIcons.calendarCheck,
++      'record' => CoolIcons.testTube,
++      _ => CoolIcons.megaphone,
+     };
+   }
+ }
+diff --git a/lib/screens/onboarding_screen.dart b/lib/screens/onboarding_screen.dart
+index 4158235..2e56b1f 100644
+--- a/lib/screens/onboarding_screen.dart
++++ b/lib/screens/onboarding_screen.dart
+@@ -93,7 +93,7 @@ class OnboardingScreen extends StatelessWidget {
+                     Expanded(
+                       child: _ThemeOption(
+                         label: l10n.themeLight,
+-                        icon: PhosphorIconsRegular.sun,
++                        icon: CoolIcons.sun,
+                         background: const Color(0xFFF7FAF5),
+                         foreground: const Color(0xFF101710),
+                         selected: selectedTheme == ThemeMode.light,
+@@ -106,7 +106,7 @@ class OnboardingScreen extends StatelessWidget {
+                     Expanded(
+                       child: _ThemeOption(
+                         label: l10n.themeDark,
+-                        icon: PhosphorIconsRegular.moonStars,
++                        icon: CoolIcons.moonStars,
+                         background: const Color(0xFF121712),
+                         foreground: const Color(0xFFE5EAE3),
+                         selected: selectedTheme == ThemeMode.dark,
+@@ -284,7 +284,7 @@ class _ThemeOption extends StatelessWidget {
+                         shape: BoxShape.circle,
+                       ),
+                       child: Icon(
+-                        PhosphorIconsRegular.check,
++                        CoolIcons.check,
+                         size: 15,
+                         color: scheme.onPrimary,
+                       ),
+@@ -349,7 +349,7 @@ class _PaletteOption extends StatelessWidget {
+               ),
+               child: selected
+                   ? Icon(
+-                      PhosphorIconsRegular.check,
++                      CoolIcons.check,
+                       color: palette.onStrong(false),
+                       size: 20,
+                     )
+diff --git a/lib/screens/profile_screen.dart b/lib/screens/profile_screen.dart
+index e15da3e..2f1a5b5 100644
+--- a/lib/screens/profile_screen.dart
++++ b/lib/screens/profile_screen.dart
+@@ -69,7 +69,7 @@ class ProfileScreen extends StatelessWidget {
+                     ),
+                   ),
+                   tooltip: l10n.editProfileTooltip,
+-                  icon: const Icon(PhosphorIconsRegular.pencilSimple),
++                  icon: const Icon(CoolIcons.pencilSimple),
+                 ),
+               ],
+             ),
+@@ -180,12 +180,12 @@ class ProfileScreen extends StatelessWidget {
+             ),
+             _SectionLabel(text: l10n.sectionMyHealth),
+             _ProfileAction(
+-              icon: PhosphorIconsRegular.folderOpen,
++              icon: CoolIcons.folderOpen,
+               label: l10n.recordsLabel,
+               onTap: () => onOpenTab(2),
+             ),
+             _ProfileAction(
+-              icon: PhosphorIconsRegular.bellSimple,
++              icon: CoolIcons.bellSimple,
+               label: l10n.notificationsLabel,
+               trailing: state.unreadCount > 0
+                   ? StatusPill(
+@@ -201,7 +201,7 @@ class ProfileScreen extends StatelessWidget {
+               ),
+             ),
+             _ProfileAction(
+-              icon: PhosphorIconsRegular.calendarBlank,
++              icon: CoolIcons.calendarBlank,
+               label: l10n.appointmentsMenu,
+               onTap: () => onOpenTab(1),
+             ),
+@@ -212,7 +212,7 @@ class ProfileScreen extends StatelessWidget {
+                 crossAxisAlignment: CrossAxisAlignment.start,
+                 children: [
+                   _PreferenceHeader(
+-                    icon: PhosphorIconsRegular.circleHalf,
++                    icon: CoolIcons.circleHalf,
+                     title: l10n.themeTitle,
+                     subtitle: l10n.themeSubtitle,
+                   ),
+@@ -240,7 +240,7 @@ class ProfileScreen extends StatelessWidget {
+                   ),
+                   const SizedBox(height: 22),
+                   _PreferenceHeader(
+-                    icon: PhosphorIconsRegular.translate,
++                    icon: CoolIcons.translate,
+                     title: l10n.languageTitle,
+                     subtitle: l10n.languageSubtitle,
+                   ),
+@@ -254,7 +254,7 @@ class ProfileScreen extends StatelessWidget {
+                   ),
+                   const SizedBox(height: 22),
+                   _PreferenceHeader(
+-                    icon: PhosphorIconsRegular.palette,
++                    icon: CoolIcons.palette,
+                     title: l10n.accentTitle,
+                     subtitle: l10n.accentSubtitle,
+                   ),
+@@ -284,7 +284,7 @@ class ProfileScreen extends StatelessWidget {
+                   ),
+                   const SizedBox(height: 24),
+                   _PreferenceHeader(
+-                    icon: PhosphorIconsRegular.textAa,
++                    icon: CoolIcons.textAa,
+                     title: l10n.fontsTitle,
+                     subtitle: l10n.fontsSubtitle,
+                   ),
+@@ -337,14 +337,14 @@ class ProfileScreen extends StatelessWidget {
+             ),
+             _SectionLabel(text: l10n.sectionClinic),
+             _ProfileAction(
+-              icon: PhosphorIconsRegular.mapPin,
++              icon: CoolIcons.mapPin,
+               label: l10n.contactHours,
+               onTap: () => Navigator.of(context).push(
+                 MaterialPageRoute<void>(builder: (_) => const ContactScreen()),
+               ),
+             ),
+             _ProfileAction(
+-              icon: PhosphorIconsRegular.info,
++              icon: CoolIcons.info,
+               label: l10n.aboutApp,
+               onTap: () => _showAbout(context),
+             ),
+@@ -525,7 +525,7 @@ class _ProfileAction extends StatelessWidget {
+               ),
+               if (trailing != null) ...[trailing!, const SizedBox(width: 6)],
+               Icon(
+-                PhosphorIconsRegular.caretRight,
++                CoolIcons.caretRight,
+                 color: scheme.onSurfaceVariant,
+               ),
+             ],
+@@ -689,7 +689,7 @@ class _PaletteChoice extends StatelessWidget {
+               ),
+               child: selected
+                   ? Icon(
+-                      PhosphorIconsRegular.check,
++                      CoolIcons.check,
+                       color: palette.onStrong(false),
+                       size: 18,
+                     )
+diff --git a/lib/screens/records_screen.dart b/lib/screens/records_screen.dart
+index ba6912d..dbf1a37 100644
+--- a/lib/screens/records_screen.dart
++++ b/lib/screens/records_screen.dart
+@@ -104,7 +104,7 @@ class _RecordsScreenState extends State<RecordsScreen> {
+                 ? AppRefreshEmpty(
+                     onRefresh: demoRefresh,
+                     child: EmptyState(
+-                      icon: PhosphorIconsRegular.fileText,
++                      icon: CoolIcons.fileText,
+                       title: query.isNotEmpty
+                           ? l10n.noResultsTitle
+                           : l10n.noRecordsTitle,
+@@ -173,8 +173,8 @@ class _RecordCard extends StatelessWidget {
+         children: [
+           TonalIcon(
+             icon: isLab
+-                ? PhosphorIconsRegular.testTube
+-                : PhosphorIconsRegular.stethoscope,
++                ? CoolIcons.testTube
++                : CoolIcons.stethoscope,
+             background: scheme.surfaceContainerHigh,
+             foreground: scheme.onSurfaceVariant,
+           ),
+@@ -234,7 +234,7 @@ class _RecordCard extends StatelessWidget {
+           Padding(
+             padding: const EdgeInsets.only(top: 14),
+             child: Icon(
+-              PhosphorIconsRegular.caretRight,
++              CoolIcons.caretRight,
+               color: scheme.onSurfaceVariant,
+             ),
+           ),
+diff --git a/lib/screens/root_shell.dart b/lib/screens/root_shell.dart
+index 2d6c453..b4c523d 100644
+--- a/lib/screens/root_shell.dart
++++ b/lib/screens/root_shell.dart
+@@ -110,23 +110,23 @@ class _RootShellState extends State<RootShell> {
+             onDestinationSelected: _openTab,
+             destinations: [
+               NavigationDestination(
+-                icon: const Icon(PhosphorIconsRegular.house),
+-                selectedIcon: const Icon(PhosphorIconsFill.house),
++                icon: const Icon(CoolIcons.house),
++                selectedIcon: const Icon(CoolIcons.house),
+                 label: l10n.navHome,
+               ),
+               NavigationDestination(
+-                icon: const Icon(PhosphorIconsRegular.calendarDots),
+-                selectedIcon: const Icon(PhosphorIconsFill.calendarDots),
++                icon: const Icon(CoolIcons.calendarDots),
++                selectedIcon: const Icon(CoolIcons.calendarDots),
+                 label: l10n.navAppointments,
+               ),
+               NavigationDestination(
+-                icon: const Icon(PhosphorIconsRegular.folderOpen),
+-                selectedIcon: const Icon(PhosphorIconsFill.folderOpen),
++                icon: const Icon(CoolIcons.folderOpen),
++                selectedIcon: const Icon(CoolIcons.folderOpen),
+                 label: l10n.navRecords,
+               ),
+               NavigationDestination(
+-                icon: const Icon(PhosphorIconsRegular.userCircle),
+-                selectedIcon: const Icon(PhosphorIconsFill.userCircle),
++                icon: const Icon(CoolIcons.userCircle),
++                selectedIcon: const Icon(CoolIcons.userCircle),
+                 label: l10n.navProfile,
+               ),
+             ],
+diff --git a/lib/screens/saturday_schedule_screen.dart b/lib/screens/saturday_schedule_screen.dart
+index 3eb3017..f4288e7 100644
+--- a/lib/screens/saturday_schedule_screen.dart
++++ b/lib/screens/saturday_schedule_screen.dart
+@@ -33,11 +33,12 @@ class SaturdayScheduleScreen extends StatelessWidget {
+ 
+     return Scaffold(
+       appBar: AppBar(
++        leading: const AppBackButton(),
+         title: Text(l10n.saturdayScheduleTitle),
+         actions: [
+           IconButton(
+             tooltip: l10n.viewDoctorCalendar,
+-            icon: const Icon(PhosphorIconsRegular.calendarDots),
++            icon: const Icon(CoolIcons.calendarDots),
+             onPressed: () => Navigator.of(context).push(
+               MaterialPageRoute<void>(
+                 builder: (_) => const DoctorCalendarScreen(),
+@@ -68,12 +69,12 @@ class SaturdayScheduleScreen extends StatelessWidget {
+             Row(
+               children: [
+                 _HoursChip(
+-                  icon: PhosphorIconsRegular.clock,
++                  icon: CoolIcons.clock,
+                   label: l10n.specialistHours,
+                 ),
+                 const SizedBox(width: 8),
+                 _HoursChip(
+-                  icon: PhosphorIconsRegular.stethoscope,
++                  icon: CoolIcons.stethoscope,
+                   label: l10n.mbbsOpdDaily,
+                 ),
+               ],
+@@ -110,7 +111,7 @@ class SaturdayScheduleScreen extends StatelessWidget {
+               crossAxisAlignment: CrossAxisAlignment.start,
+               children: [
+                 Icon(
+-                  PhosphorIconsRegular.info,
++                  CoolIcons.info,
+                   size: 18,
+                   color: scheme.onSurfaceVariant,
+                 ),
+@@ -353,7 +354,7 @@ class _ScheduleDoctorTile extends StatelessWidget {
+             ),
+             const SizedBox(width: 8),
+             Icon(
+-              PhosphorIconsRegular.caretRight,
++              CoolIcons.caretRight,
+               size: 18,
+               color: scheme.onSurfaceVariant,
+             ),
+diff --git a/lib/screens/services_screen.dart b/lib/screens/services_screen.dart
+index 76d213c..3b3a474 100644
+--- a/lib/screens/services_screen.dart
++++ b/lib/screens/services_screen.dart
+@@ -76,7 +76,8 @@ class _ServicesScreenState extends State<ServicesScreen> {
+   Widget build(BuildContext context) {
+     final l10n = L10n.of(context);
+     return Scaffold(
+-      appBar: AppBar(title: Text(l10n.servicesTitle)),
++      appBar: AppBar(
++        leading: const AppBackButton(),title: Text(l10n.servicesTitle)),
+       body: Column(
+         children: [
+           Padding(
+@@ -191,7 +192,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
+                 child: Row(
+                   children: [
+                     Icon(
+-                      PhosphorIconsRegular.calendarDots,
++                      CoolIcons.calendarDots,
+                       size: 16,
+                       color: scheme.primary,
+                     ),
+@@ -206,7 +207,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
+                     ),
+                     const SizedBox(width: 4),
+                     Icon(
+-                      PhosphorIconsRegular.caretRight,
++                      CoolIcons.caretRight,
+                       size: 16,
+                       color: scheme.onSurfaceVariant,
+                     ),
+@@ -221,7 +222,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
+               ? AppRefreshEmpty(
+                   onRefresh: demoRefresh,
+                   child: EmptyState(
+-                    icon: PhosphorIconsRegular.stethoscope,
++                    icon: CoolIcons.stethoscope,
+                     title: query.isNotEmpty
+                         ? l10n.noResultsTitle
+                         : l10n.noDoctorsTitle,
+@@ -286,7 +287,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
+               ? AppRefreshEmpty(
+                   onRefresh: demoRefresh,
+                   child: EmptyState(
+-                    icon: PhosphorIconsRegular.folderOpen,
++                    icon: CoolIcons.folderOpen,
+                     title: l10n.noResultsTitle,
+                     message: l10n.noResultsMessage,
+                   ),
+@@ -385,7 +386,7 @@ class _DoctorListCard extends StatelessWidget {
+           Row(
+             children: [
+               Icon(
+-                PhosphorIconsRegular.clock,
++                CoolIcons.clock,
+                 size: 15,
+                 color: scheme.onSurfaceVariant,
+               ),
+@@ -492,7 +493,7 @@ class _DepartmentListCard extends StatelessWidget {
+               ],
+             ),
+           ),
+-          Icon(PhosphorIconsRegular.caretRight, color: scheme.onSurfaceVariant),
++          Icon(CoolIcons.caretRight, color: scheme.onSurfaceVariant),
+         ],
+       ),
+     );
+diff --git a/lib/screens/visit_detail_screen.dart b/lib/screens/visit_detail_screen.dart
+index 0a1cd26..41576d5 100644
+--- a/lib/screens/visit_detail_screen.dart
++++ b/lib/screens/visit_detail_screen.dart
+@@ -20,7 +20,8 @@ class VisitDetailScreen extends StatelessWidget {
+     final isLab = record.kind == RecordKind.lab;
+ 
+     return Scaffold(
+-      appBar: AppBar(title: Text(l10n.reportDetails)),
++      appBar: AppBar(
++        leading: const AppBackButton(),title: Text(l10n.reportDetails)),
+       body: AppRefreshView(
+         onRefresh: demoRefresh,
+         child: ListView(
+@@ -31,8 +32,8 @@ class VisitDetailScreen extends StatelessWidget {
+               children: [
+                 TonalIcon(
+                   icon: isLab
+-                      ? PhosphorIconsRegular.testTube
+-                      : PhosphorIconsRegular.stethoscope,
++                      ? CoolIcons.testTube
++                      : CoolIcons.stethoscope,
+                   size: 56,
+                   iconSize: 26,
+                 ),
+@@ -125,7 +126,7 @@ class VisitDetailScreen extends StatelessWidget {
+                         crossAxisAlignment: CrossAxisAlignment.start,
+                         children: [
+                           TonalIcon(
+-                            icon: PhosphorIconsRegular.pill,
++                            icon: CoolIcons.pill,
+                             size: 38,
+                             iconSize: 19,
+                             background: scheme.surfaceContainerHigh,
+diff --git a/lib/widgets/app_search_field.dart b/lib/widgets/app_search_field.dart
+index 152f0ec..0b55c10 100644
+--- a/lib/widgets/app_search_field.dart
++++ b/lib/widgets/app_search_field.dart
+@@ -1,5 +1,6 @@
+ import 'package:flutter/material.dart';
+ 
++import '../core/icons.dart';
+ import '../core/l10n.dart';
+ 
+ /// Search input reusing the app's filled, rounded InputDecorationTheme.
+@@ -24,14 +25,14 @@ class AppSearchField extends StatelessWidget {
+       textInputAction: TextInputAction.search,
+       decoration: InputDecoration(
+         hintText: hint ?? l10n.searchHint,
+-        prefixIcon: const Icon(Icons.search),
++        prefixIcon: const Icon(CoolIcons.search),
+         suffixIcon: ValueListenableBuilder<TextEditingValue>(
+           valueListenable: controller,
+           builder: (context, value, _) {
+             if (value.text.isEmpty) return const SizedBox.shrink();
+             return IconButton(
+               tooltip: l10n.clearSearch,
+-              icon: const Icon(Icons.close_rounded),
++              icon: const Icon(CoolIcons.x),
+               onPressed: () {
+                 controller.clear();
+                 onChanged('');
+diff --git a/lib/widgets/booking_pickers.dart b/lib/widgets/booking_pickers.dart
+index 79cff3b..246694e 100644
+--- a/lib/widgets/booking_pickers.dart
++++ b/lib/widgets/booking_pickers.dart
+@@ -41,7 +41,7 @@ class BookingDateRail extends StatelessWidget {
+     final l10n = L10n.of(context);
+     if (dates.isEmpty) {
+       return _Note(
+-        icon: PhosphorIconsRegular.calendarX,
++        icon: CoolIcons.calendarX,
+         text: l10n.bookingNoDates,
+       );
+     }
+@@ -147,7 +147,7 @@ class _DateChip extends StatelessWidget {
+                 Row(
+                   children: [
+                     Icon(
+-                      PhosphorIconsRegular.calendarBlank,
++                      CoolIcons.calendarBlank,
+                       size: 12,
+                       color: selected
+                           ? scheme.onPrimary.withValues(alpha: 0.85)
+@@ -275,7 +275,7 @@ class BookingSlotPicker extends StatelessWidget {
+         crossAxisAlignment: CrossAxisAlignment.start,
+         children: [
+           _Note(
+-            icon: PhosphorIconsRegular.calendarX,
++            icon: CoolIcons.calendarX,
+             text: l10n.bookingNoSlots,
+           ),
+           const SizedBox(height: 12),
+diff --git a/lib/widgets/common.dart b/lib/widgets/common.dart
+index 711b871..2098825 100644
+--- a/lib/widgets/common.dart
++++ b/lib/widgets/common.dart
+@@ -78,7 +78,7 @@ class SectionHeader extends StatelessWidget {
+               children: [
+                 Text(actionLabel!),
+                 const SizedBox(width: 2),
+-                const Icon(PhosphorIconsRegular.caretRight, size: 18),
++                const Icon(CoolIcons.caretRight, size: 18),
+               ],
+             ),
+           ),
+@@ -484,6 +484,20 @@ void showAppSnack(
+   );
+ }
+ 
++/// Coolicons back button for pushed screens.
++class AppBackButton extends StatelessWidget {
++  const AppBackButton({super.key});
++
++  @override
++  Widget build(BuildContext context) {
++    return IconButton(
++      tooltip: MaterialLocalizations.of(context).backButtonTooltip,
++      icon: const Icon(CoolIcons.arrowLeft),
++      onPressed: () => Navigator.of(context).maybePop(),
++    );
++  }
++}
++
+ /// Confirm dialog → cancel → Undo snackbar. Shared by the appointments list
+ /// and the appointment detail screen.
+ Future<void> cancelAppointmentFlow(
+diff --git a/lib/widgets/notice_carousel.dart b/lib/widgets/notice_carousel.dart
+index 797e125..b8a74d6 100644
+--- a/lib/widgets/notice_carousel.dart
++++ b/lib/widgets/notice_carousel.dart
+@@ -178,9 +178,7 @@ class _NoticeCarouselState extends State<NoticeCarousel> {
+                 constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                 padding: EdgeInsets.zero,
+                 onPressed: _togglePaused,
+-                icon: Icon(
+-                  _paused ? Icons.play_arrow_rounded : Icons.pause_rounded,
+-                ),
++                icon: Icon(_paused ? CoolIcons.play : CoolIcons.pause),
+               ),
+             Text(
+               l10n.swipeHint,
+@@ -299,7 +297,7 @@ class _NoticeCard extends StatelessWidget {
+                       style: theme.textTheme.labelSmall?.copyWith(color: muted),
+                     ),
+                   ),
+-                  Icon(PhosphorIconsRegular.arrowRight, size: 18, color: muted),
++                  Icon(CoolIcons.arrowRight, size: 18, color: muted),
+                 ],
+               ),
+             ],
+@@ -372,7 +370,7 @@ void showNoticeSheet(BuildContext context, Notice notice) {
+                 width: double.infinity,
+                 child: FilledButton.icon(
+                   onPressed: () => callClinic(sheetContext),
+-                  icon: const Icon(PhosphorIconsRegular.phoneCall, size: 18),
++                  icon: const Icon(CoolIcons.phoneCall, size: 18),
+                   label: Text(l10n.noticeRegisterCall),
+                 ),
+               ),
+diff --git a/pubspec.yaml b/pubspec.yaml
+index f750dbc..0cdabc4 100644
+--- a/pubspec.yaml
++++ b/pubspec.yaml
+@@ -1,7 +1,7 @@
+ name: battar_sanjibani
+ description: "Battar Sanjibani Polyclinic patient app — appointments, doctors, records and notices."
+ publish_to: 'none'
+-version: 1.7.0+2011
++version: 1.7.1+2013
+ 
+ environment:
+   sdk: ^3.13.7
+@@ -80,12 +80,9 @@ flutter:
+           weight: 600
+         - asset: assets/fonts/Poppins-Bold.ttf
+           weight: 700
+-    - family: Phosphor
++    - family: CoolIcons
+       fonts:
+-        - asset: assets/fonts/Phosphor.ttf
+-    - family: PhosphorFill
+-      fonts:
+-        - asset: assets/fonts/PhosphorFill.ttf
++        - asset: assets/fonts/CoolIcons.ttf
+     - family: Inter
+       fonts:
+         - asset: assets/fonts/Inter-Regular.ttf
