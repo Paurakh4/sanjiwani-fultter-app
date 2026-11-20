@@ -12,9 +12,9 @@ import '../state/app_state.dart';
 import '../widgets/app_refresh.dart';
 import '../widgets/common.dart';
 import '../widgets/notice_carousel.dart';
+import 'contact_screen.dart';
 import 'appointment_detail_screen.dart';
 import 'appointments_screen.dart';
-import 'visit_detail_screen.dart';
 
 class NotificationsScreen extends StatelessWidget {
   const NotificationsScreen({super.key});
@@ -122,14 +122,14 @@ class NotificationsScreen extends StatelessWidget {
           ),
         );
       case 'record':
-        final records = demoRecords(l10n.language);
-        final record = records.firstWhere(
-          (r) => r.id == refId,
-          orElse: () => records.first,
-        );
-        Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (_) => VisitDetailScreen(record: record),
+        // No in-app report viewer yet, so point at the clinic/lab instead of
+        // opening the sample record.
+        showAppSnack(
+          context,
+          l10n.reportsComingSnack,
+          actionLabel: l10n.callClinic,
+          onAction: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => const ContactScreen()),
           ),
         );
       default:

@@ -197,13 +197,28 @@ class L10n {
   // Common -------------------------------------------------------------------
 
   String get navHome => _t('गृह', 'Home');
-  String get navAppointments => _t('अपोइन्टमेन्ट', 'Appointments');
+  // "Visits" keeps a five-tab bar readable in English; full titles stay
+  // "Appointments" inside the screen and the order sheet.
+  String get navAppointments => _t('अपोइन्टमेन्ट', 'Visits');
+  String get navCalendar => _t('पात्रो', 'Calendar');
   String get navRecords => _t('रेकर्ड', 'Records');
   String get navProfile => _t('प्रोफाइल', 'Profile');
 
   String get all => _t('सबै', 'All');
   String get cancel => _t('रद्द', 'Cancel');
   String get okay => _t('ठीक छ', 'OK');
+  String get close => _t('बन्द गर्नुहोस्', 'Close');
+  String get calendarSubtitle => _t(
+    'विशेषज्ञ शनिबार र तपाईंका अपोइन्टमेन्ट, महिना अनुसार।',
+    'Specialist Saturdays and your appointments, month by month.',
+  );
+  String get navOrderTitle => _t('नेभिगेसन क्रम', 'Bottom bar order');
+  String get navOrderSubtitle => _t(
+    'माथि/तल बटन थिचेर क्रम मिलाउनुहोस्।',
+    'Use the up and down buttons to rearrange.',
+  );
+  String get navOrderReset =>
+      _t('पूर्वनिर्धारित क्रम', 'Default order');
   String get save => _t('सुरक्षित गर्नुहोस्', 'Save');
   String get keep => _t('रहिरहनुहोस्', 'Keep it');
   String get viewAll => _t('सबै', 'View all');
@@ -442,16 +457,18 @@ class L10n {
     'भ्रमण, निदान र ल्याब रिपोर्टहरू',
     'Visits, diagnoses and lab reports',
   );
-  String get filterVisits => _t('भ्रमण', 'Visits');
-  String get filterLabs => _t('ल्याब', 'Lab');
-  String get recordsDemoNote => _t(
-    'यो डेमो संस्करणमा नमुना रेकर्डहरू देखाइएका छन्।',
-    'This demo build shows sample records.',
+  String get comingSoonLabel => _t('चाँडै', 'Coming soon');
+  String get reportsComingTitle => _t(
+    'रिपोर्ट चाँडै आउँदैछ',
+    'Reports are coming soon',
   );
-  String get noRecordsTitle => _t('कुनै रेकर्ड भेटिएन', 'No records found');
-  String get noRecordsMessage => _t(
-    'यस श्रेणीमा हाल कुनै रेकर्ड छैन।',
-    'There are no records in this category.',
+  String get reportsComingMessage => _t(
+    'ल्याबका रिपोर्ट र भ्रमणको सारांश यही ट्याबमा देखाइनेछ। अहिलेका लागि रिपोर्ट क्लिनिक वा ल्याबबाट लिनुहोस्।',
+    'Lab reports and visit summaries will appear in this tab. For now, collect your reports from the clinic/lab.',
+  );
+  String get reportsComingSnack => _t(
+    'एपमा रिपोर्ट चाँडै आउँदैछ। अहिलेका लागि रिपोर्ट क्लिनिक वा ल्याबबाट लिनुहोस्।',
+    'Reports in the app are coming soon. Collect this report from the clinic/lab for now.',
   );
   String get reportDetails => _t('रिपोर्ट विवरण', 'Report details');
   String get sectionResults => _t('जाँचको नतिजा', 'Results');
@@ -473,6 +490,7 @@ class L10n {
   String bloodGroup(String value) =>
       _t('रक्त समूह $value', 'Blood group $value');
   String get upcomingLabel => _t('आगामी अपोइन्टमेन्ट', 'Upcoming appointments');
+  String get pastVisitsLabel => _t('विगत भ्रमण', 'Past visits');
   String get recordsLabel => _t('मेडिकल रेकर्ड', 'Medical records');
   String get sectionMyHealth => _t('मेरो स्वास्थ्य', 'My health');
   String get notificationsLabel => _t('सूचनाहरू', 'Notifications');
@@ -642,8 +660,8 @@ class L10n {
   String get labReportReadyTitle =>
       _t('ल्याब रिपोर्ट तयार', 'Lab report ready');
   String get labReportReadyBody => _t(
-    'तपाईंको CBC रिपोर्ट तयार भएको छ। रिसेप्सनबाट संकलन गर्नुहोस्।',
-    'Your CBC report is ready. Please collect it from reception.',
+    'तपाईंको CBC रिपोर्ट तयार भएको छ। क्लिनिक वा ल्याबबाट लिनुहोस्।',
+    'Your CBC report is ready. Please collect it from the clinic/lab.',
   );
 
   String get appointmentConfirmedTitleNotification => appointmentConfirmedTitle;
@@ -711,12 +729,89 @@ class L10n {
 
   String get searchHint => _t('खोज्नुहोस्…', 'Search…');
   String get searchDoctorsHint => _t('डाक्टर खोज्नुहोस्…', 'Search doctors…');
-  String get searchRecordsHint => _t('रेकर्ड खोज्नुहोस्…', 'Search records…');
   String get clearSearch => _t('खोज खाली गर्नुहोस्', 'Clear search');
   String get noResultsTitle => _t('कुनै नतिजा भेटिएन', 'No matches');
   String get noResultsMessage => _t(
     'अर्को नाम वा शब्द प्रयास गर्नुहोस्।',
     'Try a different name or keyword.',
+  );
+
+  // Auth ---------------------------------------------------------------------
+
+  String get loginWelcomeTitle => _t('फेरि स्वागत छ', 'Welcome back');
+  String get loginWelcomeBody => _t(
+    'साइन इन गरी अपोइन्टमेन्ट, रेकर्ड र सूचना हेर्नुहोस्।',
+    'Sign in to manage your appointments, records and notices.',
+  );
+  String get passwordHint => _t('पासवर्ड', 'Password');
+  String get forgotPassword => _t('पासवर्ड बिर्सनुभयो?', 'Forgot password?');
+  String get signIn => _t('साइन इन', 'Sign in');
+  String get demoLogin => _t('डेमो लगइन', 'Demo login');
+  String get demoLoginNote => _t(
+    'डेमो संस्करण — कुनै पनि फोन नम्बर र पासवर्डले काम गर्छ।',
+    'Demo build — any phone number and password works.',
+  );
+  String get orDivider => _t('वा', 'or');
+  String get noAccountPrompt => _t('खाता छैन?', 'No account yet?');
+  String get createAccount => _t('खाता बनाउनुहोस्', 'Create account');
+  String get signInDoneSnack =>
+      _t('साइन इन भयो। स्वागत छ!', 'Signed in. Welcome!');
+  String get passwordRequired => _t('पासवर्ड लेख्नुहोस्।', 'Enter a password.');
+  String get passwordShort => _t(
+    'पासवर्ड कम्तीमा ६ अक्षरको हुनुपर्छ।',
+    'Password must be at least 6 characters.',
+  );
+
+  String get signupBody => _t(
+    'केही मिनेटमै खाता खोली अपोइन्टमेन्ट बुक गर्न सक्नुहुन्छ।',
+    'Create an account in minutes and book appointments.',
+  );
+  String get emailHint => _t('इमेल (ऐच्छिक)', 'Email (optional)');
+  String get emailInvalid => _t('इमेल ठीक छैन।', 'Enter a valid email.');
+  String get confirmPasswordHint =>
+      _t('पासवर्ड पुनः लेख्नुहोस्', 'Confirm password');
+  String get passwordMismatch => _t('पासवर्ड मिलेन।', 'Passwords do not match.');
+  String get termsPrefix => _t('मैले', 'I agree to the');
+  String get termsLink => _t('सेवा सर्तहरू', 'Terms of Service');
+  String get termsRequired =>
+      _t('सर्तहरू मान्नुपर्छ।', 'Please accept the terms.');
+  String get termsDialogTitle => _t('सेवा सर्तहरू', 'Terms of Service');
+  String get termsDialogBody => _t(
+    'यो डेमो संस्करण हो। प्रोफाइल र अपोइन्टमेन्टको जानकारी तपाईंको फोनमा मात्र सुरक्षित रहन्छ, बाहिर पठाइँदैन।',
+    'This is a demo build. Your profile and appointment details stay on this phone only and are never sent anywhere.',
+  );
+  String get signupDoneSnack =>
+      _t('खाता बन्यो। स्वागत छ!', 'Account created. Welcome!');
+  String get haveAccountPrompt => _t('खाता पहिले नै छ?', 'Already registered?');
+
+  String get resetTitle => _t('पासवर्ड रिसेट', 'Reset password');
+  String get resetBody => _t(
+    'दर्ता भएको फोन नम्बर लेख्नुहोस्, हामी ४ अंकको सङ्केत पठाउँछौं।',
+    'Enter your registered phone number and we will send a 4-digit code.',
+  );
+  String get sendCode => _t('सङ्केत पठाउनुहोस्', 'Send code');
+  String get codeHint => _t('४ अंकको सङ्केत', '4-digit code');
+  String codeSentNote(String phone) =>
+      _t('$phone मा सङ्केत पठाइयो।', 'Code sent to $phone.');
+  String get verifyCode => _t('सङ्केत जाँच्नुहोस्', 'Verify code');
+  String get codeInvalid => _t('४ अंकको सङ्केत लेख्नुहोस्।', 'Enter the 4-digit code.');
+  String get newPasswordHint => _t('नयाँ पासवर्ड', 'New password');
+  String get resetPassword => _t('पासवर्ड रिसेट गर्नुहोस्', 'Reset password');
+  String get resetDoneTitle => _t('पासवर्ड फेरियो', 'Password changed');
+  String get resetDoneBody => _t(
+    'अब नयाँ पासवर्डले साइन इन गर्नुहोस्।',
+    'Sign in with your new password now.',
+  );
+  String get backToLogin => _t('लगइनमा फर्कनुहोस्', 'Back to login');
+  String stepOf(int step, int total) =>
+      _t('चरण ${digits(step)}/${digits(total)}', 'Step $step of $total');
+
+  String get sectionAccount => _t('खाता', 'Account');
+  String get signOut => _t('साइन आउट', 'Sign out');
+  String get signOutTitle => _t('साइन आउट गर्ने?', 'Sign out?');
+  String get signOutBody => _t(
+    'डाटा यही फोनमा रहन्छ; फेरि साइन इन गर्न सकिन्छ।',
+    'Your data stays on this phone; you can sign in again.',
   );
 
   String bloodGroupDisplay(String value) {

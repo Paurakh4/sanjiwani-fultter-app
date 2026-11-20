@@ -16,7 +16,15 @@ import 'booking_screen.dart';
 
 /// Month calendar marking which Saturdays carry which visiting specialists.
 class DoctorCalendarScreen extends StatefulWidget {
-  const DoctorCalendarScreen({super.key});
+  const DoctorCalendarScreen({
+    super.key,
+    this.embedded = false,
+    this.scrollController,
+  });
+
+  /// Renders without a Scaffold/AppBar for use inside the bottom-bar tabs.
+  final bool embedded;
+  final ScrollController? scrollController;
 
   @override
   State<DoctorCalendarScreen> createState() => _DoctorCalendarScreenState();
@@ -103,11 +111,63 @@ class _DoctorCalendarScreenState extends State<DoctorCalendarScreen> {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final l10n = L10n.of(context);
-    final datePrimary = context.watch<AppState>().datePrimary;
+
+    if (widget.embedded) {
+      return SafeArea(
+        bottom: false,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TabPageHeader(
+              title: l10n.navCalendar,
+              subtitle: l10n.calendarSubtitle,
+            ),
+            Expanded(
+              child: ListView(
+                controller: widget.scrollController,
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(
+                  AppTokens.gutter,
+                  0,
+                  AppTokens.gutter,
+                  32,
+                ),
+                children: _calendarContent(context, theme, scheme, l10n),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    return Scaffold(
+      appBar: AppBar(
+        leading: const AppBackButton(),
+        title: Text(l10n.doctorCalendarTitle),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(
+          AppTokens.gutter,
+          4,
+          AppTokens.gutter,
+          32,
+        ),
+        children: _calendarContent(context, theme, scheme, l10n),
+      ),
+    );
+  }
+
+  List<Widget> _calendarContent(
+    BuildContext context,
+    ThemeData theme,
+    ColorScheme scheme,
+    L10n l10n,
+  ) {
+    final state = context.watch<AppState>();
+    final datePrimary = state.datePrimary;
     final bsPrimary = datePrimary == DatePrimary.nepali;
     final today = dateOnly(DateTime.now());
     final bookedDates = {
-      for (final appointment in context.watch<AppState>().appointments)
+      for (final appointment in state.appointments)
         if (appointment.isUpcoming) dateOnly(appointment.date),
     };
     final nextSaturday = nextBookableSaturday(DateTime.now());
@@ -122,19 +182,7 @@ class _DoctorCalendarScreenState extends State<DoctorCalendarScreen> {
         l10n.weekdayShort(sundayAnchor.add(Duration(days: i))),
     ];
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: const AppBackButton(),
-        title: Text(l10n.doctorCalendarTitle),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(
-          AppTokens.gutter,
-          4,
-          AppTokens.gutter,
-          32,
-        ),
-        children: [
+    return [
           // Gradient month header with a peek at this Saturday's doctors.
           Container(
             padding: const EdgeInsets.fromLTRB(8, 6, 8, 14),
@@ -294,10 +342,8 @@ class _DoctorCalendarScreenState extends State<DoctorCalendarScreen> {
             onPressed: () => _shiftToMonth(context, today),
             child: Text(l10n.goToday),
           ),
-        ],
-      ),
-    );
-  }
+        ];
+      }
 
   void _shiftToMonth(BuildContext context, DateTime today) {
     final target = DateTime(today.year, today.month);

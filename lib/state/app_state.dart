@@ -28,6 +28,8 @@ class AppState extends ChangeNotifier {
   static const _kNepaliHeadingFont = 'nepali_heading_font_v1';
   static const _kNepaliBodyFont = 'nepali_body_font_v1';
   static const _kEnglishFont = 'english_font_v1';
+  static const _kSignedIn = 'signed_in_v1';
+  static const _kTabOrder = 'tab_order_v1';
 
   late PatientProfile profile;
   List<Appointment> appointments = [];
@@ -40,6 +42,10 @@ class AppState extends ChangeNotifier {
   NepaliFont nepaliBodyFont = NepaliFont.mukta;
   EnglishFont englishFont = EnglishFont.poppins;
   bool onboarded = false;
+  bool signedIn = false;
+
+  /// Bottom-bar tab ids in display order (see RootShell for the id mapping).
+  List<int> tabOrder = const [0, 4, 1, 2, 3];
 
   AppFonts get fonts => AppFonts(
     nepaliHeading: nepaliHeadingFont,
@@ -105,6 +111,8 @@ class AppState extends ChangeNotifier {
       orElse: () => EnglishFont.poppins,
     );
     onboarded = _prefs.getBool(_kOnboarded) ?? false;
+    signedIn = _prefs.getBool(_kSignedIn) ?? false;
+    tabOrder = _restoreTabOrder();
     if (!onboarded && themeMode == ThemeMode.system) {
       themeMode = ThemeMode.light;
       _prefs.setString(_kThemeMode, 'light');
@@ -450,6 +458,47 @@ class AppState extends ChangeNotifier {
     _prefs.setBool(_kOnboarded, true);
     notifyListeners();
   }
+
+  // Demo-only auth: any credentials are accepted; real auth arrives later.
+  void signIn() {
+    if (signedIn) return;
+    signedIn = true;
+    _prefs.setBool(_kSignedIn, true);
+    notifyListeners();
+  }
+
+  void signOut() {
+    if (!signedIn) return;
+    signedIn = false;
+    _prefs.setBool(_kSignedIn, false);
+    notifyListeners();
+  }
+
+  // Bottom-bar tab order (0 home, 1 appointments, 2 records, 3 profile,
+  // 4 calendar). Defaults to calendar second; reorderable from settings.
+  static const _defaultTabOrder = [0, 4, 1, 2, 3];
+
+  List<int> _restoreTabOrder() {
+    final raw = _prefs.getString(_kTabOrder);
+    if (raw == null) return List.of(_defaultTabOrder);
+    try {
+      final order = (jsonDecode(raw) as List).map((e) => e as int).toList();
+      final valid = order.length == 5 &&
+          {...order}.length == 5 &&
+          order.every(_defaultTabOrder.contains);
+      return valid ? order : List.of(_defaultTabOrder);
+    } catch (_) {
+      return List.of(_defaultTabOrder);
+    }
+  }
+
+  void setTabOrder(List<int> order) {
+    tabOrder = List.of(order);
+    _prefs.setString(_kTabOrder, jsonEncode(order));
+    notifyListeners();
+  }
+
+  void resetTabOrder() => setTabOrder(_defaultTabOrder);
 
   void _persistProfile() {
     _prefs.setString(_kProfile, jsonEncode(profile.toJson()));

@@ -10,7 +10,6 @@ import '../core/l10n.dart';
 import '../core/nepali.dart';
 import '../core/palette.dart';
 import '../core/tokens.dart';
-import '../data/demo_data.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/app_refresh.dart';
@@ -38,7 +37,6 @@ class ProfileScreen extends StatelessWidget {
     final scheme = theme.colorScheme;
     final brand = context.brand;
     final profile = state.profile;
-    final recordCount = demoRecords(language).length;
 
     return SafeArea(
       bottom: false,
@@ -170,10 +168,10 @@ class ProfileScreen extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: _StatCard(
-                    value: l10n.digits(recordCount),
-                    label: l10n.recordsLabel,
+                    value: l10n.digits(state.pastAppointments.length),
+                    label: l10n.pastVisitsLabel,
                     accent: brand.text,
-                    onTap: () => onOpenTab(2),
+                    onTap: () => onOpenTab(1),
                   ),
                 ),
               ],
@@ -182,6 +180,11 @@ class ProfileScreen extends StatelessWidget {
             _ProfileAction(
               icon: CoolIcons.folderOpen,
               label: l10n.recordsLabel,
+              trailing: StatusPill(
+                label: l10n.comingSoonLabel,
+                background: scheme.surfaceContainerHigh,
+                foreground: scheme.onSurfaceVariant,
+              ),
               onTap: () => onOpenTab(2),
             ),
             _ProfileAction(
@@ -201,7 +204,7 @@ class ProfileScreen extends StatelessWidget {
               ),
             ),
             _ProfileAction(
-              icon: CoolIcons.calendarBlank,
+              svgIcon: 'clipboard-list-round',
               label: l10n.appointmentsMenu,
               onTap: () => onOpenTab(1),
             ),
@@ -351,6 +354,11 @@ class ProfileScreen extends StatelessWidget {
                 ],
               ),
             ),
+            _ProfileAction(
+              svgIcon: 'arrow-down-up-round',
+              label: l10n.navOrderTitle,
+              onTap: () => _showTabOrderSheet(context),
+            ),
             _SectionLabel(text: l10n.sectionClinic),
             _ProfileAction(
               icon: CoolIcons.mapPin,
@@ -363,6 +371,12 @@ class ProfileScreen extends StatelessWidget {
               icon: CoolIcons.info,
               label: l10n.aboutApp,
               onTap: () => _showAbout(context),
+            ),
+            _SectionLabel(text: l10n.sectionAccount),
+            _ProfileAction(
+              svgIcon: 'log-out-round',
+              label: l10n.signOut,
+              onTap: () => _signOut(context),
             ),
             const SizedBox(height: 28),
             Text(
@@ -383,6 +397,179 @@ class ProfileScreen extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  void _showTabOrderSheet(BuildContext context) {
+    final l10n = L10n.of(context);
+    final labels = <int, String>{
+      0: l10n.navHome,
+      1: l10n.appointmentsTitle,
+      2: l10n.navRecords,
+      3: l10n.navProfile,
+      4: l10n.navCalendar,
+    };
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        final sheetL10n = L10n.of(sheetContext);
+        final scheme = Theme.of(sheetContext).colorScheme;
+        var order = List.of(
+          sheetContext.read<AppState>().tabOrder,
+        );
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(sheetL10n.navOrderTitle,
+                    style: Theme.of(sheetContext).textTheme.titleLarge),
+                const SizedBox(height: 4),
+                Text(
+                  sheetL10n.navOrderSubtitle,
+                  style: Theme.of(sheetContext).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(sheetContext).colorScheme.onSurfaceVariant,
+                      ),
+                ),
+                const SizedBox(height: 12),
+                StatefulBuilder(
+                  builder: (sheetContext, setSheetState) => Column(
+                    children: [
+                      for (var i = 0; i < order.length; i++)
+                        ListTile(
+                          leading: switch (order[i]) {
+                            1 => TonalSvgIcon(
+                              svg: 'clipboard-list-round',
+                              size: 42,
+                              iconSize: 20,
+                              background: scheme.surfaceContainerHigh,
+                              foreground: scheme.onSurfaceVariant,
+                            ),
+                            4 => TonalSvgIcon(
+                              svg: 'calendar-round',
+                              size: 42,
+                              iconSize: 20,
+                              background: scheme.surfaceContainerHigh,
+                              foreground: scheme.onSurfaceVariant,
+                            ),
+                            _ => TonalIcon(
+                              icon: switch (order[i]) {
+                                0 => CoolIcons.house,
+                                2 => CoolIcons.folderOpen,
+                                _ => CoolIcons.userCircle,
+                              },
+                              size: 42,
+                              iconSize: 20,
+                              background: scheme.surfaceContainerHigh,
+                              foreground: scheme.onSurfaceVariant,
+                            ),
+                          },
+                          title: Text(labels[order[i]] ?? ''),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                onPressed: i == 0
+                                    ? null
+                                    : () => setSheetState(() {
+                                          final id = order.removeAt(i);
+                                          order.insert(i - 1, id);
+                                          sheetContext
+                                              .read<AppState>()
+                                              .setTabOrder(order);
+                                        }),
+                                icon: CoolSvgIcon(
+                                  'chevron-up-round',
+                                  size: 22,
+                                  color: i == 0
+                                      ? scheme.onSurfaceVariant.withValues(
+                                          alpha: 0.3,
+                                        )
+                                      : scheme.onSurfaceVariant,
+                                ),
+                              ),
+                              IconButton(
+                                onPressed: i == order.length - 1
+                                    ? null
+                                    : () => setSheetState(() {
+                                          final id = order.removeAt(i);
+                                          order.insert(i + 1, id);
+                                          sheetContext
+                                              .read<AppState>()
+                                              .setTabOrder(order);
+                                        }),
+                                icon: CoolSvgIcon(
+                                  'chevron-down-round',
+                                  size: 22,
+                                  color: i == order.length - 1
+                                      ? scheme.onSurfaceVariant.withValues(
+                                          alpha: 0.3,
+                                        )
+                                      : scheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () {
+                          sheetContext.read<AppState>().resetTabOrder();
+                          Navigator.of(sheetContext).pop();
+                        },
+                        child: Text(sheetL10n.navOrderReset),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: () => Navigator.of(sheetContext).pop(),
+                        child: Text(sheetL10n.close),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _signOut(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        final dialogL10n = L10n.of(dialogContext);
+        return AlertDialog(
+          title: Text(dialogL10n.signOutTitle),
+          content: Text(dialogL10n.signOutBody),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(dialogL10n.keep),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                dialogContext.read<AppState>().signOut();
+              },
+              child: Text(dialogL10n.signOut),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -501,13 +688,15 @@ class _StatCard extends StatelessWidget {
 
 class _ProfileAction extends StatelessWidget {
   const _ProfileAction({
-    required this.icon,
+    this.icon,
+    this.svgIcon,
     required this.label,
     required this.onTap,
     this.trailing,
   });
 
-  final IconData icon;
+  final IconData? icon;
+  final String? svgIcon;
   final String label;
   final VoidCallback onTap;
   final Widget? trailing;
@@ -516,6 +705,21 @@ class _ProfileAction extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final leading = svgIcon != null
+        ? TonalSvgIcon(
+            svg: svgIcon!,
+            size: 42,
+            iconSize: 20,
+            background: scheme.surfaceContainerHigh,
+            foreground: scheme.onSurfaceVariant,
+          )
+        : TonalIcon(
+            icon: icon!,
+            size: 42,
+            iconSize: 20,
+            background: scheme.surfaceContainerHigh,
+            foreground: scheme.onSurfaceVariant,
+          );
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -525,13 +729,7 @@ class _ProfileAction extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
           child: Row(
             children: [
-              TonalIcon(
-                icon: icon,
-                size: 42,
-                iconSize: 20,
-                background: scheme.surfaceContainerHigh,
-                foreground: scheme.onSurfaceVariant,
-              ),
+              leading,
               const SizedBox(width: 14),
               Expanded(
                 child: Text(

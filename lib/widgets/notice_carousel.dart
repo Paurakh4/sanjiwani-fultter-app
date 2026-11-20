@@ -320,16 +320,10 @@ class _NoticeCard extends StatelessWidget {
   }
 }
 
-/// Specialist announcements go straight to a booking pre-filled for the
-/// announced doctor and their next scheduled Saturday; other notices open the
-/// full notice sheet.
+/// Every notice opens the full detail sheet; booking happens via the sheet's
+/// Book now button so nothing jumps straight to a new appointment.
 void openNotice(BuildContext context, Notice notice) {
-  final doctor = doctorById(notice.doctorId);
-  if (doctor == null) {
-    showNoticeSheet(context, notice);
-    return;
-  }
-  startBooking(context, departmentId: doctor.departmentId, doctorId: doctor.id);
+  showNoticeSheet(context, notice);
 }
 
 void showNoticeSheet(BuildContext context, Notice notice) {
@@ -430,7 +424,7 @@ void showNoticeSheet(BuildContext context, Notice notice) {
                 width: double.infinity,
                 child: OutlinedButton(
                   onPressed: () => Navigator.of(sheetContext).pop(),
-                  child: Text(l10n.okay),
+                  child: Text(l10n.close),
                 ),
               ),
             ],

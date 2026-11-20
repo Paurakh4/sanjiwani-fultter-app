@@ -118,6 +118,68 @@ class TonalIcon extends StatelessWidget {
   }
 }
 
+/// Coolicons line-round icon from the bundled iconify SVG set
+/// (assets/icons, downloaded from icon-sets.iconify.design/coolicons).
+/// Monochrome stroke SVG, so an srcIn color filter tints it fully.
+class CoolSvgIcon extends StatelessWidget {
+  const CoolSvgIcon(this.name, {super.key, this.size = 24, this.color});
+
+  final String name;
+  final double size;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    return SvgPicture.asset(
+      'assets/icons/$name.svg',
+      width: size,
+      height: size,
+      fit: BoxFit.contain,
+      colorFilter: color == null
+          ? null
+          : ColorFilter.mode(color!, BlendMode.srcIn),
+    );
+  }
+}
+
+/// Tonal circular badge wrapping a [CoolSvgIcon], matching [TonalIcon].
+class TonalSvgIcon extends StatelessWidget {
+  const TonalSvgIcon({
+    super.key,
+    required this.svg,
+    this.size = 44,
+    this.iconSize = 22,
+    this.background,
+    this.foreground,
+  });
+
+  final String svg;
+  final double size;
+  final double iconSize;
+  final Color? background;
+  final Color? foreground;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: background ?? scheme.primary,
+        shape: BoxShape.circle,
+      ),
+      child: Center(
+        child: CoolSvgIcon(
+          svg,
+          size: iconSize,
+          color: foreground ?? scheme.onPrimary,
+        ),
+      ),
+    );
+  }
+}
+
 class AppWordmark extends StatelessWidget {
   const AppWordmark({super.key, this.height = 42});
 

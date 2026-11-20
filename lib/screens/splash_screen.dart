@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 
 import '../state/app_state.dart';
 import '../widgets/app_logo.dart';
+import 'auth/login_screen.dart';
 import 'onboarding_screen.dart';
 import 'root_shell.dart';
 
@@ -46,7 +47,9 @@ class _SplashGateState extends State<SplashGate> {
       switchOutCurve: Curves.easeInCubic,
       child: _finished
           ? (state.onboarded
-                ? const RootShell(key: ValueKey('root'))
+                ? (state.signedIn
+                      ? const RootShell(key: ValueKey('root'))
+                      : const LoginScreen(key: ValueKey('login')))
                 : const OnboardingScreen(key: ValueKey('onboarding')))
           : const _LogoIntroSplash(key: ValueKey('splash')),
     );

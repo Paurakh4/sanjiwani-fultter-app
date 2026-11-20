@@ -9,11 +9,16 @@ import '../core/icons.dart';
 import '../core/l10n.dart';
 import '../core/tokens.dart';
 import '../state/app_state.dart';
+import '../theme.dart';
+import '../widgets/common.dart';
 import 'appointments_screen.dart';
+import 'doctor_calendar_screen.dart';
 import 'home_screen.dart';
 import 'profile_screen.dart';
 import 'records_screen.dart';
 
+/// Tab ids: 0 home, 1 appointments, 2 records, 3 profile, 4 calendar.
+/// Display order comes from AppState.tabOrder; screen widgets are listed by id.
 class RootShell extends StatefulWidget {
   const RootShell({super.key});
 
@@ -22,8 +27,8 @@ class RootShell extends StatefulWidget {
 }
 
 class _RootShellState extends State<RootShell> {
-  int _index = 0;
-  final _controllers = List.generate(4, (_) => ScrollController());
+  int _selectedId = 0;
+  final _controllers = List.generate(5, (_) => ScrollController());
   Timer? _ticker;
 
   @override
@@ -47,9 +52,10 @@ class _RootShellState extends State<RootShell> {
     super.dispose();
   }
 
-  void _openTab(int index) {
-    if (index == _index) {
-      final controller = _controllers[index];
+  /// Opens a tab by id regardless of its display position.
+  void _openTab(int id) {
+    if (id == _selectedId) {
+      final controller = _controllers[id];
       if (controller.hasClients) {
         controller.animateTo(
           0,
@@ -59,7 +65,7 @@ class _RootShellState extends State<RootShell> {
       }
       return;
     }
-    setState(() => _index = index);
+    setState(() => _selectedId = id);
   }
 
   @override
@@ -68,6 +74,67 @@ class _RootShellState extends State<RootShell> {
     final scheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
     final l10n = L10n.of(context);
+    final order = context.watch<AppState>().tabOrder;
+
+    final screens = <int, Widget>{
+      0: HomeScreen(
+        onOpenTab: _openTab,
+        isActive: _selectedId == 0,
+        scrollController: _controllers[0],
+      ),
+      1: AppointmentsScreen(scrollController: _controllers[1]),
+      2: RecordsScreen(scrollController: _controllers[2]),
+      3: ProfileScreen(
+        onOpenTab: _openTab,
+        scrollController: _controllers[3],
+      ),
+      4: DoctorCalendarScreen(
+        embedded: true,
+        scrollController: _controllers[4],
+      ),
+    };
+
+    final destinations = <int, NavigationDestination>{
+      0: NavigationDestination(
+        icon: const Icon(CoolIcons.house),
+        selectedIcon: const Icon(CoolIcons.houseFill),
+        label: l10n.navHome,
+      ),
+      1: NavigationDestination(
+        // A clipboard list, not a second calendar: the calendar tab sits right
+        // beside it and two calendar glyphs read as the same destination.
+        icon: CoolSvgIcon(
+          'clipboard-list-round',
+          color: scheme.onSurfaceVariant,
+        ),
+        selectedIcon: CoolSvgIcon(
+          'clipboard-list-fill-round',
+          color: context.brand.onStrong,
+        ),
+        label: l10n.navAppointments,
+      ),
+      2: NavigationDestination(
+        icon: const Icon(CoolIcons.folderOpen),
+        selectedIcon: const Icon(CoolIcons.folderOpenFill),
+        label: l10n.navRecords,
+      ),
+      3: NavigationDestination(
+        icon: const Icon(CoolIcons.userCircle),
+        selectedIcon: const Icon(CoolIcons.userCircleFill),
+        label: l10n.navProfile,
+      ),
+      4: NavigationDestination(
+        icon: CoolSvgIcon(
+          'calendar-round',
+          color: scheme.onSurfaceVariant,
+        ),
+        selectedIcon: CoolSvgIcon(
+          'calendar-fill-round',
+          color: context.brand.onStrong,
+        ),
+        label: l10n.navCalendar,
+      ),
+    };
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
@@ -83,20 +150,8 @@ class _RootShellState extends State<RootShell> {
       ),
       child: Scaffold(
         body: IndexedStack(
-          index: _index,
-          children: [
-            HomeScreen(
-              onOpenTab: _openTab,
-              isActive: _index == 0,
-              scrollController: _controllers[0],
-            ),
-            AppointmentsScreen(scrollController: _controllers[1]),
-            RecordsScreen(scrollController: _controllers[2]),
-            ProfileScreen(
-              onOpenTab: _openTab,
-              scrollController: _controllers[3],
-            ),
-          ],
+          index: order.indexOf(_selectedId),
+          children: [for (final id in order) screens[id]!],
         ),
         bottomNavigationBar: DecoratedBox(
           decoration: BoxDecoration(
@@ -106,30 +161,9 @@ class _RootShellState extends State<RootShell> {
             ),
           ),
           child: NavigationBar(
-            selectedIndex: _index,
-            onDestinationSelected: _openTab,
-            destinations: [
-              NavigationDestination(
-                icon: const Icon(CoolIcons.house),
-                selectedIcon: const Icon(CoolIcons.houseFill),
-                label: l10n.navHome,
-              ),
-              NavigationDestination(
-                icon: const Icon(CoolIcons.calendarDots),
-                selectedIcon: const Icon(CoolIcons.calendarDotsFill),
-                label: l10n.navAppointments,
-              ),
-              NavigationDestination(
-                icon: const Icon(CoolIcons.folderOpen),
-                selectedIcon: const Icon(CoolIcons.folderOpenFill),
-                label: l10n.navRecords,
-              ),
-              NavigationDestination(
-                icon: const Icon(CoolIcons.userCircle),
-                selectedIcon: const Icon(CoolIcons.userCircleFill),
-                label: l10n.navProfile,
-              ),
-            ],
+            selectedIndex: order.indexOf(_selectedId),
+            onDestinationSelected: (position) => _openTab(order[position]),
+            destinations: [for (final id in order) destinations[id]!],
           ),
         ),
       ),

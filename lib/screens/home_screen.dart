@@ -96,10 +96,10 @@ class HomeScreen extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 4),
+                        // The wave lives inside the greeting run so it shares
+                        // the text baseline instead of floating beside it.
                         Text(
-                          l10n.greeting(
-                            l10n.personName(state.profile.firstName),
-                          ),
+                          '${l10n.greeting(l10n.personName(state.profile.firstName))} 👋',
                           style: theme.textTheme.displaySmall?.copyWith(
                             fontSize: 32,
                           ),
@@ -127,7 +127,7 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ),
                       tooltip: l10n.notificationsLabel,
-                      icon: const Icon(CoolIcons.bellFill),
+                      icon: const Icon(CoolIcons.bell),
                     ),
                   ),
                 ],
@@ -138,6 +138,9 @@ class HomeScreen extends StatelessWidget {
               NoticeCarousel(notices: notices, active: isActive),
               const SizedBox(height: AppTokens.sectionGap),
               Row(
+                // Start-aligned so the reports action can carry its
+                // coming-soon line without pushing the other circles off line.
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: _QuickAction(
@@ -157,6 +160,7 @@ class HomeScreen extends StatelessWidget {
                     child: _QuickAction(
                       icon: CoolIcons.fileText,
                       label: l10n.quickReports,
+                      comingSoon: true,
                       onTap: () => onOpenTab(2),
                     ),
                   ),
@@ -515,16 +519,19 @@ class _QuickAction extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
+    this.comingSoon = false,
   });
 
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+  final bool comingSoon;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final l10n = L10n.of(context);
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -553,6 +560,18 @@ class _QuickAction extends StatelessWidget {
                   fontWeight: FontWeight.w500,
                 ),
               ),
+              if (comingSoon) ...[
+                const SizedBox(height: 2),
+                Text(
+                  l10n.comingSoonLabel,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    fontSize: 10.5,
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
             ],
           ),
         ),
