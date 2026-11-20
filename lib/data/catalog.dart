@@ -1,13 +1,12 @@
 import '../core/icons.dart';
 
-import '../core/l10n.dart';
 import '../core/saturday_schedule.dart';
 import '../models.dart';
 
 /// Bilingual fallback label for an appointment without a specific doctor.
 const String kClinicServiceDisplayName = 'Clinic service / क्लिनिक सेवा';
 
-const departments = <Department>[
+const _shippedDepartments = <Department>[
   Department(
     id: 'opd',
     nameNp: 'सामान्य OPD',
@@ -177,7 +176,7 @@ const departments = <Department>[
   ),
 ];
 
-const doctors = <Doctor>[
+const _shippedDoctors = <Doctor>[
   Doctor(
     id: 'ashish',
     nameNp: 'डा. आशिष श्रेष्ठ',
@@ -378,7 +377,7 @@ const doctors = <Doctor>[
   ),
 ];
 
-const saturdaySpecialistDepartmentIds = <String>[
+const _shippedSpecialistOrder = <String>[
   'derma',
   'ent',
   'physician',
@@ -387,10 +386,6 @@ const saturdaySpecialistDepartmentIds = <String>[
   'psych',
   'echo',
 ];
-
-/// Date-specific exceptions for the monthly Saturday rotation.
-/// Keys use `yyyy-MM-dd`, for example `'2026-12-12': {'sunita'}`.
-const saturdayScheduleOverrides = <String, Set<String>>{};
 
 Set<String>? _saturdayOverrideFor(DateTime date) =>
     saturdayScheduleOverrides[saturdayDateKey(date)];
@@ -428,66 +423,6 @@ int _saturdayDoctorOrder(Doctor a, Doctor b) {
   if (aIndex != bIndex) return aIndex.compareTo(bIndex);
   return a.id.compareTo(b.id);
 }
-
-const notices = <Notice>[
-  Notice(
-    id: 'notice-specialist',
-    tag: 'विशेषज्ञ भ्रमण',
-    title: 'मनोरोग र मुटु विशेषज्ञ सेवा',
-    body: 'यही २०८२ जेठ ३१ गते शनिवार काठमाडौँ बाट मनोरोग विशेषज्ञ डाक्टर सुमन प्रसाद अधिकारी र सहिद गंगालाल मुटु अस्पताल बाँसबारीबाट मुटुको भिडियो अर्थात् इकोकार्डियोग्राफी गर्ने आवश्यक सामग्री सहित वरिष्ठ मुटु रोग विशेषज्ञ डाक्टर आउनुहुने हुँदा समयमै नाम टिपाउनु होला ।',
-    dateLabel: '२०८२ जेठ ३१',
-    doctorId: 'suman',
-  ),
-  Notice(
-    id: 'notice-lab',
-    tag: 'ल्याब सेवा',
-    title: 'ल्याब रिपोर्ट सोही दिन',
-    body: 'नियमित रगत र पिसाब परीक्षणको रिपोर्ट अब सोही दिन उपलब्ध हुन्छ। रिपोर्ट लिन क्लिनिकको रेसेप्सनमा सम्पर्क गर्नुहोस्।',
-    dateLabel: '२०८२ कात्तिक २०',
-  ),
-  Notice(
-    id: 'notice-bp',
-    tag: 'निःशुल्क सेवा',
-    title: 'निःशुल्क रक्तचाप जाँच',
-    body: 'हरेक बिहान ७:०० देखि ९:०० बजेसम्म निःशुल्क रक्तचाप तथा सुगर जाँच उपलब्ध छ। सेवा लिन रिसेप्सनमा नाम टिपाउनुहोस्।',
-    dateLabel: '२०८२ कात्तिक २५',
-  ),
-];
-
-const clinicSlots = <SlotShift, List<String>>{
-  SlotShift.morning: [
-    '07:00',
-    '07:30',
-    '08:00',
-    '08:30',
-    '09:00',
-    '09:30',
-    '10:00',
-    '10:30',
-    '11:00',
-    '11:30',
-  ],
-  SlotShift.afternoon: [
-    '12:00',
-    '12:30',
-    '13:00',
-    '13:30',
-    '14:00',
-    '14:30',
-    '15:00',
-    '15:30',
-  ],
-  SlotShift.evening: [
-    '16:00',
-    '16:30',
-    '17:00',
-    '17:30',
-    '18:00',
-    '18:30',
-    '19:00',
-    '19:30',
-  ],
-};
 
 Doctor? doctorById(String? id) {
   if (id == null) return null;
@@ -530,286 +465,61 @@ List<Doctor> get specialistDoctors {
   return result;
 }
 
-PatientProfile demoProfile() {
-  return const PatientProfile(
-    name: 'सीता श्रेष्ठ',
-    phone: '9841234567',
-    age: '29',
-    gender: 'महिला',
-    bloodGroup: 'O+',
-    address: 'विदुर-२, बट्टार, नुवाकोट',
-    patientId: 'BSP-0024',
-  );
-}
 
-DateTime nextWeekday(int weekday) {
-  final now = DateTime.now();
-  var date = DateTime(
-    now.year,
-    now.month,
-    now.day,
-  ).add(const Duration(days: 1));
-  while (date.weekday != weekday) {
-    date = date.add(const Duration(days: 1));
+/// The clinic's own catalog, and the single place any of it is read from.
+///
+/// The shipped defaults below are exactly what
+/// `backend/pb_migrations/1766300010_seed_catalog.js` inserts — that file is
+/// generated from this one, so the app and a fresh server start from the same
+/// facts and an offline first run still shows the real clinic. Once the backend
+/// answers, [Catalog.apply] replaces everything and the server is the source of
+/// truth from then on.
+///
+/// Nothing here describes a patient. Profiles, bookings and notifications only
+/// ever come from the server, so there is no invented history to fall back to.
+abstract final class Catalog {
+  Catalog._();
+
+  static List<Department> departments = _shippedDepartments;
+  static List<Doctor> doctors = _shippedDoctors;
+  static List<String> specialistOrder = _shippedSpecialistOrder;
+  static List<Notice> notices = const [];
+  static Map<String, Set<String>> saturdayOverrides = const {};
+
+  /// True once the server has supplied the catalog, so the UI can tell a
+  /// shipped default apart from what the clinic actually has configured.
+  static bool served = false;
+
+  static void apply({
+    List<Department>? departments,
+    List<Doctor>? doctors,
+    List<String>? specialistOrder,
+    List<Notice>? notices,
+    Map<String, Set<String>>? saturdayOverrides,
+  }) {
+    if (departments != null) Catalog.departments = departments;
+    if (doctors != null) Catalog.doctors = doctors;
+    if (specialistOrder != null) Catalog.specialistOrder = specialistOrder;
+    if (notices != null) Catalog.notices = notices;
+    if (saturdayOverrides != null) {
+      Catalog.saturdayOverrides = saturdayOverrides;
+    }
+    served = true;
   }
-  return date;
+
+  static void reset() {
+    departments = _shippedDepartments;
+    doctors = _shippedDoctors;
+    specialistOrder = _shippedSpecialistOrder;
+    notices = const [];
+    saturdayOverrides = const {};
+    served = false;
+  }
 }
 
-List<Appointment> demoAppointments() {
-  final now = DateTime.now();
-  final upcoming = nextSaturdayForGroup(SaturdayGroup.second);
-  final past = upcoming.subtract(const Duration(days: 28));
-  final cancelled = upcoming.subtract(const Duration(days: 7));
-
-  final gyn = departmentById('gyn');
-  final ortho = departmentById('ortho');
-  final sunita = doctorById('sunita')!;
-  final rajan = doctorById('rajan')!;
-
-  return [
-    Appointment(
-      id: 'demo-upcoming',
-      departmentId: gyn.id,
-      departmentName: gyn.displayName,
-      doctorId: sunita.id,
-      doctorName: sunita.displayName,
-      date: upcoming,
-      slot: '10:30',
-      patientName: 'सीता श्रेष्ठ',
-      phone: '9841234567',
-      fee: 800,
-      status: AppointmentStatus.booked,
-      createdAt: now,
-    ),
-    Appointment(
-      id: 'demo-completed',
-      departmentId: gyn.id,
-      departmentName: gyn.displayName,
-      doctorId: sunita.id,
-      doctorName: sunita.displayName,
-      date: past,
-      slot: '11:00',
-      patientName: 'सीता श्रेष्ठ',
-      phone: '9841234567',
-      fee: 800,
-      status: AppointmentStatus.completed,
-      createdAt: past.subtract(const Duration(days: 2)),
-    ),
-    Appointment(
-      id: 'demo-cancelled',
-      departmentId: ortho.id,
-      departmentName: ortho.displayName,
-      doctorId: rajan.id,
-      doctorName: rajan.displayName,
-      date: cancelled,
-      slot: '14:30',
-      patientName: 'सीता श्रेष्ठ',
-      phone: '9841234567',
-      fee: 800,
-      status: AppointmentStatus.cancelled,
-      createdAt: cancelled.subtract(const Duration(days: 3)),
-    ),
-  ];
-}
-
-List<AppNotification> demoNotifications() {
-  final now = DateTime.now();
-  final upcoming = nextSaturdayForGroup(SaturdayGroup.second);
-  final np = const L10n(AppLanguage.np);
-  final en = const L10n(AppLanguage.en);
-  final doctorNp = doctorById('sunita')!.name(AppLanguage.np);
-  final doctorEn = doctorById('sunita')!.name(AppLanguage.en);
-
-  return [
-    AppNotification(
-      id: 'notif-appointment',
-      title: np.appointmentReminderTitle,
-      body: np.appointmentReminderBody(upcoming, doctorNp),
-      titleEn: en.appointmentReminderTitle,
-      bodyEn: en.appointmentReminderBody(upcoming, doctorEn),
-      time: now.subtract(const Duration(hours: 2)),
-      kind: 'appointment',
-      refId: 'demo-upcoming',
-    ),
-    AppNotification(
-      id: 'notif-notice',
-      title: np.newNoticeTitle,
-      body: np.newNoticeBody,
-      titleEn: en.newNoticeTitle,
-      bodyEn: en.newNoticeBody,
-      time: now.subtract(const Duration(days: 1, hours: 3)),
-      kind: 'notice',
-      refId: 'notice-specialist',
-    ),
-    AppNotification(
-      id: 'notif-lab',
-      title: np.labReportReadyTitle,
-      body: np.labReportReadyBody,
-      titleEn: en.labReportReadyTitle,
-      bodyEn: en.labReportReadyBody,
-      time: now.subtract(const Duration(days: 2)),
-      kind: 'record',
-      read: true,
-      refId: 'record-cbc',
-    ),
-  ];
-}
-
-final Map<AppLanguage, List<VisitRecord>> _recordsCache = {};
-
-/// Stable per-language demo records (memoized so list identity does not change
-/// on every rebuild). Still sample data — not persisted patient records.
-List<VisitRecord> demoRecords(AppLanguage language) =>
-    _recordsCache.putIfAbsent(language, () => _buildDemoRecords(language));
-
-List<VisitRecord> _buildDemoRecords(AppLanguage language) {
-  final now = DateTime.now();
-  final today = DateTime(now.year, now.month, now.day);
-  final lastSaturday = nextWeekday(DateTime.saturday)
-      .subtract(const Duration(days: 7));
-  final en = language == AppLanguage.en;
-
-  return [
-    VisitRecord(
-      id: 'record-anc',
-      date: lastSaturday.subtract(const Duration(days: 21)),
-      kind: RecordKind.visit,
-      title: en ? 'Gynecology consultation' : 'स्त्री रोग परामर्श',
-      department: en ? 'Gynecology' : 'स्त्री रोग',
-      doctor: en ? 'Dr. Sunita Tamang' : 'डा. सुनिता तामाङ',
-      summary: en
-          ? 'Routine antenatal check-up (ANC) — normal'
-          : 'नियमित गर्भ जाँच (ANC) — सामान्य अवस्था',
-      vitals: en
-          ? {
-              'Blood pressure': '110/70 mmHg',
-              'Weight': '58 kg',
-              'Pulse': '78 bpm',
-            }
-          : {'रक्तचाप': '११०/७० mmHg', 'तौल': '५८ केजी', 'नाडी': '७८ बीपीएम'},
-      notes: en
-          ? [
-              'Blood pressure and weight are normal.',
-              'Take folic acid and calcium regularly.',
-              'Return for a check-up in 4 weeks.',
-            ]
-          : [
-              'रक्तचाप र तौल सामान्य छ।',
-              'फोलिक एसिड र क्याल्सियम नियमित लिनुहोस्।',
-              '४ हप्तापछि पुनः जाँचका लागि आउनुहोस्।',
-            ],
-      medicines: en
-          ? [
-              Medicine(name: 'Folic Acid 5 mg', dose: 'Once daily'),
-              Medicine(name: 'Calcium + Vitamin D', dose: 'Once daily'),
-            ]
-          : [
-              Medicine(name: 'फोलिक एसिड ५ मि.ग्रा.', dose: 'दैनिक १ चक्की'),
-              Medicine(name: 'क्याल्सियम + भिटामिन डी', dose: 'दैनिक १ चक्की'),
-            ],
-    ),
-    VisitRecord(
-      id: 'record-cbc',
-      date: lastSaturday.subtract(const Duration(days: 14)),
-      kind: RecordKind.lab,
-      title: en ? 'CBC report' : 'CBC रिपोर्ट',
-      department: en ? 'Laboratory' : 'ल्याब',
-      doctor: en ? 'Laboratory' : 'ल्याब विभाग',
-      summary: en
-          ? 'Complete blood count — all values within normal range'
-          : 'पूर्ण रगत जाँच — सबै मान सामान्य दायरामा',
-      notes: en
-          ? ['Collect the report from reception.']
-          : ['रिपोर्ट रिसेप्सनबाट संकलन गर्नुहोस्।'],
-      labs: en
-          ? const [
-              LabResult(
-                name: 'Hemoglobin (Hb)',
-                value: '12.8',
-                unit: 'g/dL',
-                reference: '12–16',
-              ),
-              LabResult(
-                name: 'White blood cells (WBC)',
-                value: '7,200',
-                unit: '/µL',
-                reference: '4,000–11,000',
-              ),
-              LabResult(
-                name: 'Platelets',
-                value: '2.6',
-                unit: 'lakh/µL',
-                reference: '1.5–4.5',
-              ),
-            ]
-          : const [
-              LabResult(
-                name: 'हिमोग्लोबिन (Hb)',
-                value: '१२.८',
-                unit: 'g/dL',
-                reference: '१२–१६',
-              ),
-              LabResult(
-                name: 'सेतो रक्तकोष (WBC)',
-                value: '७,२००',
-                unit: '/µL',
-                reference: '४,०००–११,०००',
-              ),
-              LabResult(
-                name: 'प्लेटलेट',
-                value: '२.६',
-                unit: 'लाख/µL',
-                reference: '१.५–४.५',
-              ),
-            ],
-    ),
-    VisitRecord(
-      id: 'record-fever',
-      date: today.subtract(const Duration(days: 96)),
-      kind: RecordKind.visit,
-      title: en ? 'General OPD consultation' : 'सामान्य OPD परामर्श',
-      department: en ? 'General OPD' : 'सामान्य OPD',
-      doctor: en ? 'Dr. Ashish Shrestha' : 'डा. आशिष श्रेष्ठ',
-      summary: en
-          ? 'Fever and sore throat — viral infection'
-          : 'ज्वरो तथा घाँटी दुख्ने — भाइरल संक्रमण',
-      vitals: en
-          ? {'Temperature': '38.2 °C', 'Blood pressure': '118/76 mmHg'}
-          : {'तापक्रम': '३८.२ °C', 'रक्तचाप': '११८/७६ mmHg'},
-      notes: en
-          ? [
-              'Drink plenty of fluids.',
-              'Return if there is no improvement in 3 days.',
-            ]
-          : [
-              'प्रशस्त झोल पदार्थ सेवन गर्नुहोस्।',
-              '३ दिनमा सुधार नभए पुनः जाँच गराउनुहोस्।',
-            ],
-      medicines: en
-          ? [
-              Medicine(
-                name: 'Paracetamol 500 mg',
-                dose: '3 times a day',
-                duration: '3 days',
-              ),
-              Medicine(
-                name: 'Cetirizine 10 mg',
-                dose: '1 at night',
-                duration: '5 days',
-              ),
-            ]
-          : [
-              Medicine(
-                name: 'प्यारासिटामोल ५०० मि.ग्रा.',
-                dose: 'दिनको ३ पटक',
-                duration: '३ दिन',
-              ),
-              Medicine(
-                name: 'सिट्रिजिन १० मि.ग्रा.',
-                dose: 'राति १ चक्की',
-                duration: '५ दिन',
-              ),
-            ],
-    ),
-  ];
-}
+List<Department> get departments => Catalog.departments;
+List<Doctor> get doctors => Catalog.doctors;
+List<Notice> get notices => Catalog.notices;
+List<String> get saturdaySpecialistDepartmentIds => Catalog.specialistOrder;
+Map<String, Set<String>> get saturdayScheduleOverrides =>
+    Catalog.saturdayOverrides;

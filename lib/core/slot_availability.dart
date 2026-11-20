@@ -1,4 +1,4 @@
-import '../data/demo_data.dart';
+import '../data/catalog.dart';
 import '../models.dart';
 import 'clinic.dart';
 import 'saturday_schedule.dart';

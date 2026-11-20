@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:pocketbase/pocketbase.dart';
+
 import '../../core/icons.dart';
 import '../../core/l10n.dart';
 import '../../core/tokens.dart';
 import '../../state/app_state.dart';
-import '../../theme.dart';
 import '../../widgets/common.dart';
 import 'forgot_password_screen.dart';
 import 'signup_screen.dart';
@@ -33,31 +34,49 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _signIn() {
+  bool _busy = false;
+
+  Future<void> _signIn() async {
     FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) {
       setState(() => _autoValidate = AutovalidateMode.onUserInteraction);
       return;
     }
-    _doSignIn();
-  }
+    if (_busy) return;
+    setState(() => _busy = true);
 
-  void _demoSignIn() {
-    FocusScope.of(context).unfocus();
-    _doSignIn();
-  }
-
-  void _doSignIn() {
     final l10n = L10n.of(context);
-    showAppSnack(context, l10n.signInDoneSnack);
-    context.read<AppState>().signIn();
+    try {
+      // The server accepts either handle, so the phone field is passed as the
+      // identifier unchanged; an email typed there works too.
+      await context.read<AppState>().signIn(
+        _phoneController.text.trim(),
+        _passwordController.text,
+      );
+      if (!mounted) return;
+      // This page can be reached either as the gate itself or pushed over the
+      // sign-up form; only the first route holds the gate that swaps in the
+      // app, so the stack has to be unwound before that can happen.
+      Navigator.of(context).popUntil((route) => route.isFirst);
+      showAppSnack(context, l10n.signInDoneSnack);
+    } on ClientException catch (error) {
+      if (!mounted) return;
+      showAppSnack(context, _failureText(l10n, error));
+    } catch (error) {
+      if (!mounted) return;
+      showAppSnack(context, l10n.signInNetworkError);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
+
+  static String _failureText(L10n l10n, ClientException error) =>
+      error.statusCode == 0 ? l10n.signInNetworkError : l10n.signInFailed;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final brand = context.brand;
     final l10n = L10n.of(context);
 
     return Scaffold(
@@ -103,7 +122,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               prefixIcon: const Icon(CoolIcons.phone),
                             ),
                             validator: (value) {
-                              final digits = (value ?? '').replaceAll(
+                              final text = (value ?? '').trim();
+                              if (text.contains('@')) return null;
+                              final digits = text.replaceAll(
                                 RegExp(r'[^0-9०-९]'),
                                 '',
                               );
@@ -162,53 +183,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: FilledButton(
-                        onPressed: _signIn,
-                        child: Text(l10n.signIn),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    Row(
-                      children: [
-                        const Expanded(child: Divider()),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 14),
-                          child: Text(
-                            l10n.orDivider,
-                            style: theme.textTheme.labelMedium?.copyWith(
-                              color: scheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ),
-                        const Expanded(child: Divider()),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton.tonal(
-                        style: FilledButton.styleFrom(
-                          backgroundColor: brand.soft,
-                          foregroundColor: brand.onSoft,
-                        ),
-                        onPressed: _demoSignIn,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(CoolIcons.sparkle, size: 18),
-                            const SizedBox(width: 8),
-                            Text(l10n.demoLogin),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Center(
-                      child: Text(
-                        l10n.demoLoginNote,
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: scheme.onSurfaceVariant,
-                        ),
+                        onPressed: _busy ? null : _signIn,
+                        child: Text(_busy ? l10n.loading : l10n.signIn),
                       ),
                     ),
                     const SizedBox(height: 24),

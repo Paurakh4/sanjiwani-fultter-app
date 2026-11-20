@@ -4,7 +4,7 @@ import '../core/icons.dart';
 import '../core/l10n.dart';
 import '../core/saturday_schedule.dart';
 import '../core/tokens.dart';
-import '../data/demo_data.dart';
+import '../data/catalog.dart';
 import '../models.dart';
 import '../widgets/app_refresh.dart';
 import '../widgets/common.dart';
@@ -48,7 +48,6 @@ class SaturdayScheduleScreen extends StatelessWidget {
         ],
       ),
       body: AppRefreshView(
-        onRefresh: demoRefresh,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(

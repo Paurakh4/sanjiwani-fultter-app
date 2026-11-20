@@ -5,7 +5,7 @@ import '../core/icons.dart';
 import '../core/clinic.dart';
 import '../core/l10n.dart';
 import '../core/tokens.dart';
-import '../data/demo_data.dart';
+import '../data/catalog.dart';
 import '../models.dart';
 import '../widgets/app_refresh.dart';
 import '../widgets/common.dart';
@@ -23,7 +23,10 @@ class DoctorDetailScreen extends StatelessWidget {
     final scheme = theme.colorScheme;
     final l10n = L10n.of(context);
     final language = l10n.language;
-    final department = departmentById(doctor.departmentId);
+    // A doctor pointing at a department that no longer exists must not take
+    // the whole page down; the row simply reads as unknown.
+    final departmentName =
+        departmentByIdOrNull(doctor.departmentId)?.displayName ?? '—';
 
     return Scaffold(
       appBar: AppBar(
@@ -31,7 +34,6 @@ class DoctorDetailScreen extends StatelessWidget {
         title: Text(l10n.doctorDetails),
       ),
       body: AppRefreshView(
-        onRefresh: demoRefresh,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(
@@ -101,7 +103,7 @@ class DoctorDetailScreen extends StatelessWidget {
                   _InfoRow(
                     icon: CoolIcons.stethoscope,
                     label: l10n.departmentLabel,
-                    value: department.displayName,
+                    value: departmentName,
                   ),
                   const SizedBox(height: 14),
                   _InfoRow(

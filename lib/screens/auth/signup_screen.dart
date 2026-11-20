@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pocketbase/pocketbase.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/icons.dart';
@@ -38,17 +39,58 @@ class _SignupScreenState extends State<SignupScreen> {
     super.dispose();
   }
 
-  void _submit() {
+  bool _busy = false;
+
+  Future<void> _submit() async {
     FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) {
       setState(() => _autoValidate = AutovalidateMode.onUserInteraction);
       return;
     }
-    showAppSnack(context, L10n.of(context).signupDoneSnack);
-    context.read<AppState>().signIn();
-    // This page sits on top of the login gate, so drop back to it after signing
-    // in; the gate swaps itself for the app shell.
-    if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
+    if (_busy) return;
+    setState(() => _busy = true);
+
+    final l10n = L10n.of(context);
+    final state = context.read<AppState>();
+    final phone = _phoneController.text.trim();
+    final password = _passwordController.text;
+    try {
+      await state.signUp(
+        name: _nameController.text.trim(),
+        phone: phone,
+        password: password,
+        email: _emailController.text.trim(),
+      );
+      // Creating the account is not the same as being signed in; doing the
+      // real sign-in afterwards proves the credentials the patient just chose.
+      await state.signIn(phone, password);
+      if (!mounted) return;
+      showAppSnack(context, l10n.signupDoneSnack);
+      // This page sits on top of the login gate, so drop back to it after
+      // signing in; the gate swaps itself for the app shell.
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    } on ClientException catch (error) {
+      if (!mounted) return;
+      showAppSnack(context, _failureText(l10n, error));
+    } catch (_) {
+      if (!mounted) return;
+      showAppSnack(context, l10n.signInNetworkError);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  static String _failureText(L10n l10n, ClientException error) {
+    if (error.statusCode == 0) return l10n.signInNetworkError;
+    final code =
+        '${error.response['message'] ?? ''}'.split('|').first.toLowerCase();
+    if (code == 'signup_phone_taken') return l10n.signupPhoneTaken;
+    if (code == 'signup_email_taken') return l10n.signupEmailTaken;
+    final data = error.response['data'];
+    if (data is Map && data.containsKey('username')) {
+      return l10n.signupPhoneTaken;
+    }
+    return l10n.signupFailed;
   }
 
   void _showTerms() {
@@ -239,8 +281,8 @@ class _SignupScreenState extends State<SignupScreen> {
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
-                  onPressed: _submit,
-                  child: Text(l10n.createAccount),
+                  onPressed: _busy ? null : _submit,
+                  child: Text(_busy ? l10n.loading : l10n.createAccount),
                 ),
               ),
               const SizedBox(height: 12),

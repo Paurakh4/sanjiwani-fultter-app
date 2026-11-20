@@ -182,6 +182,7 @@ class Notice {
     required this.title,
     required this.body,
     required this.dateLabel,
+    required this.createdAt,
     this.doctorId,
   });
 
@@ -194,6 +195,9 @@ class Notice {
   /// Specialist announcement: tapping it opens a booking pre-filled for this
   /// doctor.
   final String? doctorId;
+
+  /// When the clinic published it, which is what orders the notifications tab.
+  final DateTime createdAt;
 }
 
 class Appointment {

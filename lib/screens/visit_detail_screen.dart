@@ -27,7 +27,6 @@ class VisitDetailScreen extends StatelessWidget {
         title: Text(l10n.reportDetails),
       ),
       body: AppRefreshView(
-        onRefresh: demoRefresh,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(12, 4, 12, 40),

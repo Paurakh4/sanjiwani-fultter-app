@@ -41,7 +41,6 @@ class ProfileScreen extends StatelessWidget {
     return SafeArea(
       bottom: false,
       child: AppRefreshView(
-        onRefresh: demoRefresh,
         child: ListView(
           controller: scrollController,
           physics: const AlwaysScrollableScrollPhysics(),

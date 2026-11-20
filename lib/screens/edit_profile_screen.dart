@@ -125,7 +125,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           title: Text(l10n.editProfileTitle),
         ),
         body: AppRefreshView(
-          onRefresh: demoRefresh,
           child: Form(
             key: _formKey,
             child: ListView(

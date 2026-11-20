@@ -6,7 +6,8 @@ import '../core/l10n.dart';
 import '../core/saturday_schedule.dart';
 import '../core/slot_availability.dart';
 import '../core/tokens.dart';
-import '../data/demo_data.dart';
+import '../data/backend.dart';
+import '../data/catalog.dart';
 import '../models.dart';
 import '../state/app_state.dart';
 import '../widgets/app_loading.dart';
@@ -219,6 +220,18 @@ class _BookingScreenState extends State<BookingScreen> {
     return L10n.of(context).timeRange(start, end);
   }
 
+  /// The server says why a date cannot be booked; the patient hears it in
+  /// their own language rather than as an error string from the clinic's API.
+  static String _rejectionText(L10n l10n, BookingFailure? failure) =>
+      switch (failure) {
+        BookingFailure.offline => l10n.signInNetworkError,
+        BookingFailure.notScheduled => l10n.bookingNotScheduledSnack,
+        BookingFailure.alreadyBooked => l10n.alreadyBookedSnack,
+        BookingFailure.full => l10n.bookingFullSnack,
+        BookingFailure.past || BookingFailure.cutoff => l10n.bookingDatePassedSnack,
+        _ => l10n.bookingFailedSnack,
+      };
+
   Future<void> _submit() async {
     if (_submitting) return;
     final l10n = L10n.of(context);
@@ -232,35 +245,26 @@ class _BookingScreenState extends State<BookingScreen> {
     }
 
     setState(() => _submitting = true);
-    Appointment? appointment;
-    try {
-      appointment = await runWithLogoLoading<Appointment?>(
-        context,
-        () async {
-          await Future<void>.delayed(const Duration(milliseconds: 250));
-          return state.bookAppointment(
-            department: _department,
-            doctor: _doctor,
-            date: _date,
-            patientName: _nameController.text,
-            phone: _phoneController.text,
-          );
-        },
-        minimum: const Duration(milliseconds: 1200),
-        barrierLabel: l10n.loading,
-      );
-    } catch (_) {
-      if (mounted) setState(() => _submitting = false);
-      rethrow;
-    }
+    final result = await runWithLogoLoading<BookingResult>(
+      context,
+      () => state.bookAppointment(
+        department: _department,
+        doctor: _doctor,
+        date: _date,
+        patientName: _nameController.text,
+        phone: _phoneController.text,
+      ),
+      minimum: const Duration(milliseconds: 1200),
+      barrierLabel: l10n.loading,
+    );
 
     if (!mounted) return;
-    if (appointment == null) {
+    final confirmed = result.appointment;
+    if (confirmed == null) {
       setState(() => _submitting = false);
-      showAppSnack(context, l10n.alreadyBookedSnack);
+      showAppSnack(context, _rejectionText(l10n, result.failure));
       return;
     }
-    final confirmed = appointment;
     _done = true;
 
     await showDialog<void>(
@@ -371,7 +375,6 @@ class _BookingScreenState extends State<BookingScreen> {
           title: Text(l10n.bookingNew),
         ),
         body: AppRefreshView(
-          onRefresh: demoRefresh,
           child: Form(
             key: _formKey,
             child: ListView(

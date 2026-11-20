@@ -593,14 +593,19 @@ Future<void> cancelAppointmentFlow(
 
   if (confirmed != true || !context.mounted) return;
   final state = context.read<AppState>();
-  state.cancelAppointment(appointment.id);
+  // Only claim the visit is cancelled once the server has agreed; otherwise the
+  // snackbar and its Undo would be describing something that did not happen.
+  if (!await state.cancelAppointment(appointment.id)) {
+    if (context.mounted) showAppSnack(context, l10n.signInNetworkError);
+    return;
+  }
   if (!context.mounted) return;
   showAppSnack(
     context,
     l10n.cancelDoneSnack,
     actionLabel: l10n.undo,
-    onAction: () {
-      final restored = state.restoreAppointment(appointment.id);
+    onAction: () async {
+      final restored = await state.restoreAppointment(appointment.id);
       if (!restored && context.mounted) {
         showAppSnack(context, l10n.restoreFailedSnack);
       }

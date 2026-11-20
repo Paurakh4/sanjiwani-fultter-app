@@ -7,7 +7,7 @@ import '../core/icons.dart';
 import '../core/l10n.dart';
 import '../core/launcher.dart';
 import '../core/tokens.dart';
-import '../data/demo_data.dart';
+import '../data/catalog.dart';
 import '../models.dart';
 import '../screens/booking_screen.dart';
 

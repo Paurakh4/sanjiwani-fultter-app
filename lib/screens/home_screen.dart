@@ -9,7 +9,7 @@ import '../core/l10n.dart';
 import '../core/launcher.dart';
 import '../core/saturday_schedule.dart';
 import '../core/tokens.dart';
-import '../data/demo_data.dart';
+import '../data/catalog.dart';
 import '../models.dart';
 import '../state/app_state.dart';
 import '../widgets/app_refresh.dart';
@@ -62,7 +62,6 @@ class HomeScreen extends StatelessWidget {
     return SafeArea(
       bottom: false,
       child: AppRefreshView(
-        onRefresh: demoRefresh,
         child: SingleChildScrollView(
           controller: scrollController,
           physics: const AlwaysScrollableScrollPhysics(),

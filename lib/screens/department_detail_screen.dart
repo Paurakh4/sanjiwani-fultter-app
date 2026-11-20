@@ -5,7 +5,7 @@ import '../core/icons.dart';
 import '../core/clinic.dart';
 import '../core/l10n.dart';
 import '../core/tokens.dart';
-import '../data/demo_data.dart';
+import '../data/catalog.dart';
 import '../models.dart';
 import '../widgets/app_refresh.dart';
 import '../widgets/common.dart';
@@ -34,7 +34,6 @@ class DepartmentDetailScreen extends StatelessWidget {
         title: Text(department.displayName),
       ),
       body: AppRefreshView(
-        onRefresh: demoRefresh,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(

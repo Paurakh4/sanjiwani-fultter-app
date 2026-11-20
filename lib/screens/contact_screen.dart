@@ -29,7 +29,6 @@ class ContactScreen extends StatelessWidget {
         title: Text(l10n.contactTitle),
       ),
       body: AppRefreshView(
-        onRefresh: demoRefresh,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(

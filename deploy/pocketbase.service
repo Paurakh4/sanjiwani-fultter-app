@@ -1,0 +1,36 @@
+[Unit]
+Description=Battar Sanjibani PocketBase
+Documentation=https://pocketbase.io/docs/going-to-production/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=bsp
+Group=bsp
+WorkingDirectory=/opt/bsp/pocketbase
+ExecStart=/opt/bsp/pocketbase/pocketbase serve \
+  --http=127.0.0.1:8090 \
+  --dir=/opt/bsp/pocketbase/pb_data \
+  --migrationsDir=/opt/bsp/pocketbase/pb_migrations \
+  --hooksDir=/opt/bsp/pocketbase/pb_hooks
+EnvironmentFile=-/opt/bsp/pocketbase/env
+Restart=on-failure
+RestartSec=5
+
+# The process only ever needs to read its own tree and write inside pb_data.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/bsp/pocketbase/pb_data
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+LockPersonality=true
+CapabilityBoundingSet=
+MemoryDenyWriteExecute=false
+
+[Install]
+WantedBy=multi-user.target

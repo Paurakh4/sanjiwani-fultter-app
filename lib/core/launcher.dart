@@ -10,7 +10,8 @@ Future<void> openExternal(BuildContext context, Uri uri) async {
     if (!launched && context.mounted) {
       _showError(context);
     }
-  } catch (_) {
+  } catch (error) {
+    debugPrint('openExternal failed for $uri: $error');
     if (context.mounted) _showError(context);
   }
 }

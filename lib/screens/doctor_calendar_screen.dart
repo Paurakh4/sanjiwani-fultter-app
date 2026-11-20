@@ -8,7 +8,7 @@ import '../core/icons.dart';
 import '../core/l10n.dart';
 import '../core/saturday_schedule.dart';
 import '../core/tokens.dart';
-import '../data/demo_data.dart';
+import '../data/catalog.dart';
 import '../models.dart';
 import '../state/app_state.dart';
 import '../widgets/common.dart';

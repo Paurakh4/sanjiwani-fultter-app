@@ -5,7 +5,7 @@ import '../core/icons.dart';
 import '../core/l10n.dart';
 import '../core/launcher.dart';
 import '../core/tokens.dart';
-import '../data/demo_data.dart';
+import '../data/catalog.dart';
 import '../models.dart';
 import '../state/app_state.dart';
 import '../widgets/app_refresh.dart';
@@ -40,7 +40,9 @@ class AppointmentDetailScreen extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final doctor = doctorById(appointment.doctorId);
-    final department = departmentById(appointment.departmentId);
+    final departmentName =
+        departmentByIdOrNull(appointment.departmentId)?.displayName ??
+        appointment.departmentName;
     final doctorName =
         doctor?.displayName ??
         (appointment.doctorId == null
@@ -80,7 +82,6 @@ class AppointmentDetailScreen extends StatelessWidget {
         title: Text(l10n.appointmentDetailTitle),
       ),
       body: AppRefreshView(
-        onRefresh: demoRefresh,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(
@@ -124,7 +125,7 @@ class AppointmentDetailScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          department.displayName,
+                          departmentName,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.bodySmall?.copyWith(

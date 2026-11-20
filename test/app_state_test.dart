@@ -1,15 +1,31 @@
 import 'dart:convert';
 
+import 'package:battar_sanjibani/core/clinic.dart';
 import 'package:battar_sanjibani/core/fonts.dart';
 import 'package:battar_sanjibani/core/l10n.dart';
 import 'package:battar_sanjibani/core/nepali.dart';
 import 'package:battar_sanjibani/core/saturday_schedule.dart';
-import 'package:battar_sanjibani/core/slot_availability.dart';
-import 'package:battar_sanjibani/data/demo_data.dart';
+import 'package:battar_sanjibani/data/backend.dart';
+import 'package:battar_sanjibani/data/catalog.dart';
+
 import 'package:battar_sanjibani/models.dart';
 import 'package:battar_sanjibani/state/app_state.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'fake_clinic.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+/// A signed-in patient used to seed SharedPreferences in these tests; the app
+/// no longer ships any invented patient data.
+PatientProfile testProfile() => const PatientProfile(
+  name: 'सीता श्रेष्ठ',
+  phone: '9841234567',
+  age: '32',
+  gender: 'महिला',
+  bloodGroup: 'O+',
+  address: 'विदुर-२, बट्टार, नुवाकोट',
+  patientId: 'BSP-0001',
+);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -100,22 +116,40 @@ void main() {
     expect(departmentById('gyn').displayName, 'Gynecology / स्त्री रोग');
   });
 
-  test('seeds demo data, books Saturday, cancels, persists fonts', () async {
-    SharedPreferences.setMockInitialValues({});
-    final state = await AppState.load();
+  test('opening hours are derived from Clinic, not restated as text', () {
+    const en = L10n(AppLanguage.en);
+    const np = L10n(AppLanguage.np);
+    expect(Clinic.openHour, 7);
+    expect(Clinic.closeHour, 20);
+    expect(en.weekdayHours, '7:00 AM – 8:00 PM');
+    expect(np.weekdayHours, contains('७:००'));
+    expect(np.weekdayHours, contains('८:००'));
+    expect(
+      en.nextOpening(DateTime(2026, 11, 14, 6)),
+      'Opens today at 7:00 AM',
+    );
+    expect(
+      en.nextOpening(DateTime(2026, 11, 14, 19)),
+      'Opens tomorrow at 7:00 AM',
+    );
+    expect(
+      np.nextOpening(DateTime(2026, 11, 14, 6)),
+      'आज बिहान ७:०० बाट खुल्छ',
+    );
+  });
 
-    expect(state.profile.name, 'सीता श्रेष्ठ');
-    expect(state.upcomingAppointments, isNotEmpty);
-    expect(state.nepaliHeadingFont, NepaliFont.anek);
-    expect(state.nepaliBodyFont, NepaliFont.mukta);
-    expect(state.englishFont, EnglishFont.poppins);
-    final upcomingBefore = state.upcomingAppointments.length;
+  test('books a Saturday visit and writes it through the server', () async {
+    SharedPreferences.setMockInitialValues({});
+    final clinic = FakeClinic();
+    final state = await AppState.load(data: clinic);
+
+    expect(state.signedIn, isTrue);
+    expect(state.profile.patientId, 'BSP-0001');
+    expect(state.appointments, isEmpty);
 
     final date = nextSaturdayForGroup(SaturdayGroup.third);
     final rajan = doctorById('rajan')!;
-    expect(isDateBookable(doctor: rajan, date: date), isTrue);
-
-    final appointment = state.bookAppointment(
+    final result = await state.bookAppointment(
       department: departmentById('ortho'),
       doctor: rajan,
       date: date,
@@ -123,202 +157,232 @@ void main() {
       phone: '9800000000',
     );
 
-    expect(appointment, isNotNull);
-    expect(appointment!.date.weekday, DateTime.saturday);
-    expect(appointment.slot, rajan.startTime);
-    expect(state.datePrimary, DatePrimary.nepali);
-    state.setDatePrimary(DatePrimary.english);
-    expect(state.upcomingAppointments.length, upcomingBefore + 1);
-    expect(state.notifications.first.title, 'अपोइन्टमेन्ट पुष्टि भयो');
-    expect(state.notifications.first.refId, appointment.id);
-
-    state.cancelAppointment(appointment.id);
-    expect(
-      state.appointments.firstWhere((item) => item.id == appointment.id).status,
-      AppointmentStatus.cancelled,
-    );
-    expect(
-      state.pastAppointments.any((item) => item.id == appointment.id),
-      isTrue,
-    );
-
-    state.setNepaliHeadingFont(NepaliFont.baloo2);
-    state.setNepaliBodyFont(NepaliFont.hind);
-    state.setEnglishFont(EnglishFont.inter);
-
-    final reloaded = await AppState.load();
-    expect(
-      reloaded.appointments.any((item) => item.id == appointment.id),
-      isTrue,
-    );
-    expect(reloaded.nepaliHeadingFont, NepaliFont.baloo2);
-    expect(reloaded.nepaliBodyFont, NepaliFont.hind);
-    expect(reloaded.englishFont, EnglishFont.inter);
-    expect(reloaded.datePrimary, DatePrimary.english);
+    expect(result.ok, isTrue);
+    expect(clinic.bookCalls, 1);
+    expect(state.appointments.single.date, dateOnly(date));
+    expect(state.appointments.single.fee, rajan.fee);
+    expect(state.upcomingAppointments, hasLength(1));
+    expect(state.notifications, hasLength(1));
   });
 
-  test('books one visit per doctor per date and reschedules by date', () async {
+  test('a repeat booking is stopped locally, without a round trip', () async {
     SharedPreferences.setMockInitialValues({});
-    final state = await AppState.load();
+    final clinic = FakeClinic();
+    final state = await AppState.load(data: clinic);
     final date = nextSaturdayForGroup(SaturdayGroup.third);
-    final laterDate = date.add(const Duration(days: 28));
     final rajan = doctorById('rajan')!;
     final ortho = departmentById('ortho');
 
-    final a = state.bookAppointment(
+    await state.bookAppointment(
       department: ortho,
       doctor: rajan,
       date: date,
       patientName: 'क',
       phone: '9800000000',
-    )!;
-    expect(
-      state.bookAppointment(
-        department: ortho,
-        doctor: rajan,
-        date: date,
-        patientName: 'ख',
-        phone: '9800000001',
-      ),
-      isNull,
     );
+    expect(clinic.bookCalls, 1);
 
-    final b = state.bookAppointment(
+    final second = await state.bookAppointment(
       department: ortho,
       doctor: rajan,
-      date: laterDate,
-      patientName: 'ग',
-      phone: '9800000002',
-    )!;
-
-    expect(state.rescheduleAppointment(a.id, date: laterDate), isFalse);
-    state.cancelAppointment(b.id);
-    expect(state.rescheduleAppointment(a.id, date: laterDate), isTrue);
-
-    final reloaded = await AppState.load();
-    final moved = reloaded.appointments.firstWhere((item) => item.id == a.id);
-    expect(moved.date, laterDate);
-    expect(moved.slot, rajan.startTime);
+      date: date,
+      patientName: 'ख',
+      phone: '9800000001',
+    );
+    expect(second.failure, BookingFailure.alreadyBooked);
+    // The local pre-check caught it, so the server was not asked again.
+    expect(clinic.bookCalls, 1);
   });
 
-  test(
-    'cancel then restore round-trip, restore fails when date is taken',
-    () async {
-      SharedPreferences.setMockInitialValues({});
-      final state = await AppState.load();
-      final date = nextSaturdayForGroup(SaturdayGroup.third);
-      final rajan = doctorById('rajan')!;
-      final ortho = departmentById('ortho');
+  test('a server rejection is reported with its reason', () async {
+    SharedPreferences.setMockInitialValues({});
+    final clinic = FakeClinic()..failNext = BookingFailure.full;
+    final state = await AppState.load(data: clinic);
 
-      final a = state.bookAppointment(
-        department: ortho,
-        doctor: rajan,
-        date: date,
-        patientName: 'क',
-        phone: '9800000000',
-      )!;
+    final result = await state.bookAppointment(
+      department: departmentById('ortho'),
+      doctor: doctorById('rajan'),
+      date: nextSaturdayForGroup(SaturdayGroup.third),
+      patientName: 'क',
+      phone: '9800000000',
+    );
 
-      state.cancelAppointment(a.id);
-      expect(state.restoreAppointment(a.id), isTrue);
-      expect(
-        state.appointments.firstWhere((item) => item.id == a.id).status,
-        AppointmentStatus.booked,
-      );
+    expect(result.ok, isFalse);
+    expect(result.failure, BookingFailure.full);
+    expect(state.appointments, isEmpty);
+  });
 
-      state.cancelAppointment(a.id);
-      final b = state.bookAppointment(
-        department: ortho,
-        doctor: rajan,
-        date: date,
+  test('reschedule moves the date, a blocked write says so', () async {
+    SharedPreferences.setMockInitialValues({});
+    final clinic = FakeClinic();
+    final state = await AppState.load(data: clinic);
+    final ortho = departmentById('ortho');
+    final rajan = doctorById('rajan')!;
+
+    final first = await state.bookAppointment(
+      department: ortho,
+      doctor: rajan,
+      date: nextSaturdayForGroup(SaturdayGroup.third),
+      patientName: 'क',
+      phone: '9800000000',
+    );
+    final later = nextSaturdayForGroup(SaturdayGroup.third, from: first.appointment!.date);
+
+    expect(await state.rescheduleAppointment(first.appointment!.id, date: later), isTrue);
+    expect(state.appointments.single.date, dateOnly(later));
+    expect(clinic.moveCalls, 1);
+
+    clinic.writeFails = true;
+    expect(await state.rescheduleAppointment(first.appointment!.id, date: first.appointment!.date), isFalse);
+    expect(state.offline, isTrue);
+  });
+
+  test('cancel then restore round-trip, restore refused once the date is taken', () async {
+    SharedPreferences.setMockInitialValues({});
+    final clinic = FakeClinic();
+    final state = await AppState.load(data: clinic);
+    final ortho = departmentById('ortho');
+    final rajan = doctorById('rajan')!;
+    final date = nextSaturdayForGroup(SaturdayGroup.third);
+
+    final a = await state.bookAppointment(
+      department: ortho,
+      doctor: rajan,
+      date: date,
+      patientName: 'क',
+      phone: '9800000000',
+    );
+    expect(await state.cancelAppointment(a.appointment!.id), isTrue);
+    expect(state.appointments.single.status, AppointmentStatus.cancelled);
+
+    expect(await state.restoreAppointment(a.appointment!.id), isTrue);
+    expect(state.appointments.single.status, AppointmentStatus.booked);
+
+    // A cancelled booking leaves the slot; someone else taking it blocks the
+    // restore, which the local list can see.
+    await state.cancelAppointment(a.appointment!.id);
+    clinic.stored.add(
+      Appointment(
+        id: 'apt-other',
+        departmentId: 'ortho',
+        departmentName: 'Orthopaedics',
+        doctorId: 'rajan',
+        doctorName: 'Dr. Rajan',
+        date: dateOnly(date),
+        slot: '10:00',
         patientName: 'ख',
         phone: '9800000001',
-      )!;
-      expect(state.restoreAppointment(a.id), isFalse);
-      state.cancelAppointment(b.id);
-      expect(state.restoreAppointment(a.id), isTrue);
-    },
-  );
-
-  test('normalizes past booked appointments to completed on restore', () async {
-    final past = DateTime.now().subtract(const Duration(days: 1));
-    final apt = Appointment(
-      id: 'past-booked',
-      departmentId: 'gyn',
-      departmentName: 'Gynecology / स्त्री रोग',
-      doctorId: 'sunita',
-      doctorName: 'Dr. Sunita Tamang / डा. सुनिता तामाङ',
-      date: past,
-      slot: '10:30',
-      patientName: 'x',
-      phone: '9800000000',
-      fee: 800,
-      status: AppointmentStatus.booked,
-      createdAt: past,
-    );
-    SharedPreferences.setMockInitialValues({
-      'seeded_v1': true,
-      'profile_v1': jsonEncode(demoProfile().toJson()),
-      'appointments_v1': jsonEncode([apt.toJson()]),
-      'notifications_v1': jsonEncode(<Map<String, dynamic>>[]),
-    });
-    final state = await AppState.load();
-    expect(state.appointments.first.status, AppointmentStatus.completed);
-    expect(
-      state.pastAppointments.any((item) => item.id == 'past-booked'),
-      isTrue,
-    );
-  });
-
-  test('falls back gracefully on corrupt prefs', () async {
-    SharedPreferences.setMockInitialValues({
-      'seeded_v1': true,
-      'appointments_v1': 'not-json',
-      'profile_v1': '{bad',
-    });
-    final state = await AppState.load();
-    expect(state.appointments, isEmpty);
-    expect(state.profile.name, 'सीता श्रेष्ठ');
-  });
-
-  test(
-    're-anchors a drifted demo upcoming appointment to the future',
-    () async {
-      final past = DateTime.now().subtract(const Duration(days: 14));
-      final demo = Appointment(
-        id: 'demo-upcoming',
-        departmentId: 'gyn',
-        departmentName: 'Gynecology / स्त्री रोग',
-        doctorId: 'sunita',
-        doctorName: 'Dr. Sunita Tamang / डा. सुनिता तामाङ',
-        date: past,
-        slot: '10:30',
-        patientName: 'सीता श्रेष्ठ',
-        phone: '9841234567',
         fee: 800,
         status: AppointmentStatus.booked,
-        createdAt: past,
-      );
-      SharedPreferences.setMockInitialValues({
-        'seeded_v1': true,
-        'profile_v1': jsonEncode(demoProfile().toJson()),
-        'appointments_v1': jsonEncode([demo.toJson()]),
-        'notifications_v1': jsonEncode([
-          AppNotification(
-            id: 'notif-appointment',
-            title: 't',
-            body: 'b',
-            time: DateTime.now(),
-            kind: 'appointment',
-          ).toJson(),
-        ]),
-      });
-      final state = await AppState.load();
-      final a = state.appointments.firstWhere(
-        (item) => item.id == 'demo-upcoming',
-      );
-      expect(a.status, AppointmentStatus.booked);
-      expect(a.date.weekday, DateTime.saturday);
-      expect(a.date.isAfter(DateTime.now()), isTrue);
-    },
-  );
+        createdAt: DateTime.now(),
+      ),
+    );
+    state.appointments = await state.data.myAppointments();
+    expect(await state.restoreAppointment(a.appointment!.id), isFalse);
+  });
+
+  test('a failed cancel never claims the visit was cancelled', () async {
+    SharedPreferences.setMockInitialValues({});
+    final clinic = FakeClinic();
+    final state = await AppState.load(data: clinic);
+    final booked = await state.bookAppointment(
+      department: departmentById('ortho'),
+      doctor: doctorById('rajan'),
+      date: nextSaturdayForGroup(SaturdayGroup.third),
+      patientName: 'क',
+      phone: '9800000000',
+    );
+
+    clinic.writeFails = true;
+    expect(await state.cancelAppointment(booked.appointment!.id), isFalse);
+    expect(state.appointments.single.status, AppointmentStatus.booked);
+    expect(state.offline, isTrue);
+  });
+
+  test('a past booked visit reads as completed after the day turns', () async {
+    SharedPreferences.setMockInitialValues({});
+    final clinic = FakeClinic();
+    final state = await AppState.load(data: clinic);
+    final yesterday = DateTime.now().subtract(const Duration(days: 1));
+    clinic.stored.add(
+      Appointment(
+        id: 'past-booked',
+        departmentId: 'gyn',
+        departmentName: 'Gynecology',
+        doctorId: 'sunita',
+        doctorName: 'Dr. Sunita',
+        date: dateOnly(yesterday),
+        slot: '10:30',
+        patientName: 'क',
+        phone: '9800000000',
+        fee: 800,
+        status: AppointmentStatus.booked,
+        createdAt: yesterday,
+      ),
+    );
+
+    await state.refresh();
+
+    expect(state.appointments.single.status, AppointmentStatus.completed);
+    expect(state.pastAppointments.single.id, 'past-booked');
+  });
+
+  test('an unreachable server still renders the shipped catalog', () async {
+    SharedPreferences.setMockInitialValues({});
+    final clinic = FakeClinic(served: false);
+    final state = await AppState.load(data: clinic);
+
+    expect(state.offline, isTrue);
+    expect(departments, isNotEmpty);
+    expect(specialistDoctors, isNotEmpty);
+    expect(state.appointments, isEmpty);
+  });
+
+  test('appearance settings survive a restart', () async {
+    SharedPreferences.setMockInitialValues({});
+    final clinic = FakeClinic();
+    final state = await AppState.load(data: clinic);
+
+    state.setNepaliHeadingFont(NepaliFont.baloo2);
+    state.setNepaliBodyFont(NepaliFont.hind);
+    state.setEnglishFont(EnglishFont.inter);
+    state.setDatePrimary(DatePrimary.english);
+    state.setTabOrder([4, 0, 1, 2, 3]);
+
+    final reloaded = await AppState.load(data: FakeClinic());
+    expect(reloaded.nepaliHeadingFont, NepaliFont.baloo2);
+    expect(reloaded.nepaliBodyFont, NepaliFont.hind);
+    expect(reloaded.englishFont, EnglishFont.inter);
+    expect(reloaded.datePrimary, DatePrimary.english);
+    expect(reloaded.tabOrder, [4, 0, 1, 2, 3]);
+  });
+
+  test('an upgraded demo install keeps settings and loses invented records', () async {
+    SharedPreferences.setMockInitialValues({
+      'seeded_v1': true,
+      'signed_in_v1': true,
+      'profile_v1': jsonEncode(testProfile().toJson()),
+      'appointments_v1': jsonEncode([
+        {'id': 'apt-1', 'patientName': 'सीता श्रेष्ठ', 'status': 'booked'},
+      ]),
+      'notifications_v1': jsonEncode([
+        {'id': 'notif-appointment', 'title': 't', 'body': 'b', 'kind': 'appointment'},
+      ]),
+      'language_v1': 'np',
+      'nepali_heading_font_v1': 'mukta',
+    });
+
+    final state = await AppState.load(data: FakeClinic(signedInValue: false));
+
+    expect(state.language, AppLanguage.np);
+    expect(state.nepaliHeadingFont, NepaliFont.mukta);
+    // The demo history is gone from preferences, and a stored bool is not a
+    // session: only the server decides whether someone is signed in.
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString('appointments_v1'), isNull);
+    expect(prefs.getString('profile_v1'), isNull);
+    expect(prefs.getBool('signed_in_v1'), isNull);
+    expect(state.signedIn, isFalse);
+    expect(state.appointments, isEmpty);
+  });
 }

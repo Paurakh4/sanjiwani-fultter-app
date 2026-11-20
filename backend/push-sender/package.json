@@ -1,0 +1,16 @@
+{
+  "name": "bsp-push-sender",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Polls PocketBase for unpublished clinic notices and delivers them through FCM HTTP v1.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "firebase-admin": "^14.5.1"
+  }
+}

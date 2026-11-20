@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../core/l10n.dart';
 import '../core/tokens.dart';
-import '../data/demo_data.dart';
+import '../data/catalog.dart';
 import '../models.dart';
 import '../state/app_state.dart';
 import '../widgets/app_refresh.dart';
@@ -85,7 +85,6 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
           Expanded(
             child: appointments.isEmpty
                 ? AppRefreshEmpty(
-                    onRefresh: demoRefresh,
                     child: _showUpcoming
                         ? EmptyState(
                             icon: CoolIcons.calendarCheck,
@@ -104,7 +103,6 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                           ),
                   )
                 : AppRefreshView(
-                    onRefresh: demoRefresh,
                     child: ListView.separated(
                       controller: widget.scrollController,
                       physics: const AlwaysScrollableScrollPhysics(),
@@ -153,13 +151,15 @@ class _AppointmentCard extends StatelessWidget {
     final scheme = theme.colorScheme;
     final l10n = L10n.of(context);
     final doctor = doctorById(appointment.doctorId);
-    final department = departmentById(appointment.departmentId);
+    final department = departmentByIdOrNull(appointment.departmentId);
     final doctorName =
         doctor?.displayName ??
         (appointment.doctorId == null
             ? l10n.clinicServiceName
             : appointment.doctorName);
-    final departmentName = department.displayName;
+    // The appointment carries the name it was booked under, so a department
+    // renamed or removed later still reads correctly in the history.
+    final departmentName = department?.displayName ?? appointment.departmentName;
 
     final cancelled = appointment.status == AppointmentStatus.cancelled;
     final completed =

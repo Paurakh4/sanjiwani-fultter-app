@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
 import '../core/l10n.dart';
 import '../core/tokens.dart';
-
-Future<void> demoRefresh() {
-  return Future<void>.delayed(const Duration(milliseconds: 1400));
-}
+import '../state/app_state.dart';
 
 /// Pull-to-refresh that reveals an indicator from behind the top of the page.
 ///
@@ -126,7 +124,9 @@ class _AppRefreshViewState extends State<AppRefreshView>
       curve: AppTokens.ease,
     );
     try {
-      await (widget.onRefresh ?? demoRefresh)();
+      // A page that does not name a refresh action still means "show me what
+      // the clinic has now", which is the one thing every screen can ask for.
+      await (widget.onRefresh ?? () => context.read<AppState>().refresh())();
     } finally {
       if (mounted) {
         setState(() => _refreshing = false);

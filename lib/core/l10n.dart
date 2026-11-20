@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import 'bs_date.dart' as bs;
 import 'app_info.dart';
+import 'clinic.dart';
 import 'nepali.dart' as np;
 import 'saturday_schedule.dart';
 
@@ -156,11 +157,16 @@ class L10n {
 
   String get hoursToday => weekdayHours;
 
+  /// A whole hour as the "HH:00" string the time helpers expect, so opening
+  /// hours are only ever stated by [Clinic].
+  String _slotAt(int hour) => '${hour.toString().padLeft(2, '0')}:00';
+
   String nextOpening(DateTime value) {
-    if (value.hour < 7) {
-      return _t('आज बिहान ७:०० बाट खुल्छ', 'Opens today at 7:00 AM');
+    final opens = time(_slotAt(Clinic.openHour));
+    if (value.hour < Clinic.openHour) {
+      return _t('आज $opens बाट खुल्छ', 'Opens today at $opens');
     }
-    return _t('भोलि बिहान ७:०० बाट खुल्छ', 'Opens tomorrow at 7:00 AM');
+    return _t('भोलि $opens बाट खुल्छ', 'Opens tomorrow at $opens');
   }
 
   String money(int amount) => isEn ? 'Rs. $amount' : 'रु. ${digits(amount)}';
@@ -265,7 +271,8 @@ class L10n {
 
   String get openToday => _t('आज खुला छ', 'Open today');
   String get closedNow => _t('अहिले बन्द छ', 'Closed now');
-  String get weekdayHours => _t('बिहान ७:०० – साँझ ८:००', '7:00 AM – 8:00 PM');
+  String get weekdayHours =>
+      timeRange(_slotAt(Clinic.openHour), _slotAt(Clinic.closeHour));
   String get everyDay => _t('प्रत्येक दिन', 'Every day');
   String get specialistHours =>
       _t('बिहान १०:०० – साँझ ५:००', '10:00 AM – 5:00 PM');
@@ -405,6 +412,22 @@ class L10n {
   );
   String get confirmAppointment =>
       _t('अपोइन्टमेन्ट पुष्टि गर्नुहोस्', 'Confirm appointment');
+  String get bookingNotScheduledSnack => _t(
+    'त्यो डाक्टर उक्त मितिमा बिरामी हेर्दैननुहुन्छ। अर्को शनिबार छान्नुहोस्।',
+    'That doctor does not sit on that date. Choose another Saturday.',
+  );
+  String get bookingFullSnack => _t(
+    'उक्त मितिमा त्यो डाक्टरको समय भरिसक्यो। अर्को मिति छान्नुहोस्।',
+    'That doctor is fully booked on that date. Pick another one.',
+  );
+  String get bookingDatePassedSnack => _t(
+    'त्यो मिति बितिसक्यो। अर्को मिति छान्नुहोस्।',
+    'That date has passed. Pick another one.',
+  );
+  String get bookingFailedSnack => _t(
+    'अपोइन्टमेन्ट बुक गर्न सकिएन। फेरि प्रयास गर्नुहोस्।',
+    'Could not book the appointment. Please try again.',
+  );
   String get alreadyBookedSnack => _t(
     'यही डाक्टर र मितिको अपोइन्टमेन्ट पहिले नै छ।',
     'You already have an appointment with this doctor on that date.',
@@ -657,13 +680,6 @@ class L10n {
     'Psychiatry and cardiology specialist services are available on Saturday. Register early.',
   );
 
-  String get labReportReadyTitle =>
-      _t('ल्याब रिपोर्ट तयार', 'Lab report ready');
-  String get labReportReadyBody => _t(
-    'तपाईंको CBC रिपोर्ट तयार भएको छ। क्लिनिक वा ल्याबबाट लिनुहोस्।',
-    'Your CBC report is ready. Please collect it from the clinic/lab.',
-  );
-
   String get appointmentConfirmedTitleNotification => appointmentConfirmedTitle;
   String appointmentConfirmedBody(DateTime value, String department) => _t(
     '${weekdayBoth(value)}, ${dateBoth(value)} को अपोइन्टमेन्ट $department सेवाका लागि पुष्टि भएको छ।',
@@ -701,6 +717,21 @@ class L10n {
   String appointmentRescheduledBody(DateTime value) => _t(
     'तपाईंको अपोइन्टमेन्ट ${weekdayBoth(value)}, ${dateBoth(value)} मा सारिएको छ।',
     'Your appointment was moved to ${weekdayBoth(value)}, ${dateBoth(value)}.',
+  );
+
+  // Written by the server when a booking changes, so the app has to be able to
+  // phrase every event it may report, not only the ones it triggers itself.
+  String get appointmentCancelledTitle =>
+      _t('अपोइन्टमेन्ट रद्द भयो', 'Appointment cancelled');
+  String appointmentCancelledBody(DateTime value, String department) => _t(
+    '${weekdayBoth(value)}, ${dateBoth(value)} को $department सेवाको अपोइन्टमेन्ट रद्द गरिएको छ।',
+    'Your $department appointment on ${weekdayBoth(value)}, ${dateBoth(value)} has been cancelled.',
+  );
+
+  String get visitCompletedTitle => _t('भ्रमण पूरा भयो', 'Visit completed');
+  String visitCompletedBody(DateTime value, String department) => _t(
+    '${weekdayBoth(value)}, ${dateBoth(value)} को $department सेवाको भ्रमण पूरा भएको दर्ता भयो।',
+    'Your $department visit on ${weekdayBoth(value)}, ${dateBoth(value)} was recorded as completed.',
   );
 
   String get discardTitle => _t('परिवर्तन रद्द गर्ने?', 'Discard changes?');
@@ -746,16 +777,18 @@ class L10n {
   String get passwordHint => _t('पासवर्ड', 'Password');
   String get forgotPassword => _t('पासवर्ड बिर्सनुभयो?', 'Forgot password?');
   String get signIn => _t('साइन इन', 'Sign in');
-  String get demoLogin => _t('डेमो लगइन', 'Demo login');
-  String get demoLoginNote => _t(
-    'डेमो संस्करण — कुनै पनि फोन नम्बर र पासवर्डले काम गर्छ।',
-    'Demo build — any phone number and password works.',
-  );
-  String get orDivider => _t('वा', 'or');
   String get noAccountPrompt => _t('खाता छैन?', 'No account yet?');
   String get createAccount => _t('खाता बनाउनुहोस्', 'Create account');
   String get signInDoneSnack =>
       _t('साइन इन भयो। स्वागत छ!', 'Signed in. Welcome!');
+  String get signInFailed => _t(
+    'यो फोन नम्बर/इमेल र पासवर्ड मिलेन। फेरि प्रयास गर्नुहोस्।',
+    'That phone number or email and password did not match. Try again.',
+  );
+  String get signInNetworkError => _t(
+    'क्लिनिकको सर्भरसँग जोडिन सकिएन। इन्टरनेट जडान जाँचेर फेरि प्रयास गर्नुहोस्।',
+    'Could not reach the clinic server. Check your internet and try again.',
+  );
   String get passwordRequired => _t('पासवर्ड लेख्नुहोस्।', 'Enter a password.');
   String get passwordShort => _t(
     'पासवर्ड कम्तीमा ६ अक्षरको हुनुपर्छ।',
@@ -782,29 +815,44 @@ class L10n {
   );
   String get signupDoneSnack =>
       _t('खाता बन्यो। स्वागत छ!', 'Account created. Welcome!');
+  String get signupPhoneTaken => _t(
+    'यो फोन नम्बर पहिले नै दर्ता छ। साइन इन गर्नुहोस् वा क्लिनिकलाई फोन गर्नुहोस्।',
+    'That number is already registered. Sign in, or call the clinic.',
+  );
+  String get signupEmailTaken => _t(
+    'यो इमेल पहिले नै दर्ता छ। साइन इन गर्नुहोस् वा क्लिनिकलाई फोन गर्नुहोस्।',
+    'That email is already registered. Sign in, or call the clinic.',
+  );
+  String get signupFailed => _t(
+    'खाता बनाउन सकिएन। केही मिनेटपछि फेरि प्रयास गर्नुहोस्।',
+    'Could not create the account. Please try again in a few minutes.',
+  );
   String get haveAccountPrompt => _t('खाता पहिले नै छ?', 'Already registered?');
 
   String get resetTitle => _t('पासवर्ड रिसेट', 'Reset password');
   String get resetBody => _t(
-    'दर्ता भएको फोन नम्बर लेख्नुहोस्, हामी ४ अंकको सङ्केत पठाउँछौं।',
-    'Enter your registered phone number and we will send a 4-digit code.',
+    'खातामा दर्ता भएको इमेल लेख्नुहोस्। हामी पासवर्ड फर्काउने लिङ्क पठाउँछौं।',
+    'Enter the email on your account and we will send a link to set a new password.',
   );
-  String get sendCode => _t('सङ्केत पठाउनुहोस्', 'Send code');
-  String get codeHint => _t('४ अंकको सङ्केत', '4-digit code');
-  String codeSentNote(String phone) =>
-      _t('$phone मा सङ्केत पठाइयो।', 'Code sent to $phone.');
-  String get verifyCode => _t('सङ्केत जाँच्नुहोस्', 'Verify code');
-  String get codeInvalid => _t('४ अंकको सङ्केत लेख्नुहोस्।', 'Enter the 4-digit code.');
-  String get newPasswordHint => _t('नयाँ पासवर्ड', 'New password');
-  String get resetPassword => _t('पासवर्ड रिसेट गर्नुहोस्', 'Reset password');
-  String get resetDoneTitle => _t('पासवर्ड फेरियो', 'Password changed');
-  String get resetDoneBody => _t(
-    'अब नयाँ पासवर्डले साइन इन गर्नुहोस्।',
-    'Sign in with your new password now.',
+  String get resetSendLink =>
+      _t('रिसेट लिङ्क पठाउनुहोस्', 'Send reset link');
+  String get resetPhoneOnlyNote => _t(
+    'फोन नम्बर मात्र दर्ता गरेका बिरामीले क्लिनिकलाई फोन गरी पासवर्ड फर्काउनुपर्छ।',
+    'Registered with only a phone number? Call the clinic to reset your password.',
   );
+  String get resetSentTitle =>
+      _t('इमेल हेर्नुहोस्', 'Check your email');
+  String get resetSentBody => _t(
+    'यदि त्यो इमेल हाम्रोमा दर्ता छ भने, पासवर्ड रिसेट गर्ने लिङ्क पठाइएको छ। लिङ्क केही समयमा म्याद सकिन्छ।',
+    'If that email is on an account we have sent a reset link. The link expires after a while.',
+  );
+  String resetEmailUnknown(String email) => _t(
+    '$email हाम्रोमा दर्ता भएको भेटिएन।',
+    'No account was found for $email.',
+  );
+  String get emailRequired =>
+      _t('इमेल लेख्नुहोस्।', 'Enter an email address.');
   String get backToLogin => _t('लगइनमा फर्कनुहोस्', 'Back to login');
-  String stepOf(int step, int total) =>
-      _t('चरण ${digits(step)}/${digits(total)}', 'Step $step of $total');
 
   String get sectionAccount => _t('खाता', 'Account');
   String get signOut => _t('साइन आउट', 'Sign out');

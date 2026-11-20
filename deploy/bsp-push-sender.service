@@ -1,0 +1,31 @@
+[Unit]
+Description=Battar Sanjibani FCM notice sender
+After=network-online.target bsp-pocketbase.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=bsp
+Group=bsp
+WorkingDirectory=/opt/bsp/push-sender
+ExecStart=/usr/bin/env node /opt/bsp/push-sender/index.js
+EnvironmentFile=/opt/bsp/push-sender/env
+Restart=on-failure
+RestartSec=30
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+# Node is installed under a home directory on this host, so /home has to stay
+# readable for the interpreter. The service writes only its own tree.
+ProtectHome=read-only
+ReadWritePaths=/opt/bsp/push-sender
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+LockPersonality=true
+CapabilityBoundingSet=
+
+[Install]
+WantedBy=multi-user.target

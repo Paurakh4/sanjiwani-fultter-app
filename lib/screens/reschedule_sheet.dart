@@ -5,7 +5,7 @@ import '../core/l10n.dart';
 import '../core/saturday_schedule.dart';
 import '../core/slot_availability.dart';
 import '../core/tokens.dart';
-import '../data/demo_data.dart';
+import '../data/catalog.dart';
 import '../models.dart';
 import '../state/app_state.dart';
 import '../widgets/booking_pickers.dart';
@@ -64,9 +64,10 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
     return _doctorDates.isEmpty ? current : _doctorDates.first;
   }
 
-  void _confirm() {
+  Future<void> _confirm() async {
     final l10n = L10n.of(context);
-    final ok = context.read<AppState>().rescheduleAppointment(
+    final state = context.read<AppState>();
+    final ok = await state.rescheduleAppointment(
       widget.appointment.id,
       date: _date,
     );
@@ -74,7 +75,10 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
     if (ok) {
       Navigator.of(context).pop(true);
     } else {
-      showAppSnack(context, l10n.alreadyBookedSnack);
+      showAppSnack(
+        context,
+        state.offline ? l10n.signInNetworkError : l10n.alreadyBookedSnack,
+      );
     }
   }
 

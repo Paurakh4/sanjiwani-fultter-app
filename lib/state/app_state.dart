@@ -8,19 +8,23 @@ import '../core/l10n.dart';
 import '../core/palette.dart';
 import '../core/saturday_schedule.dart';
 import '../core/slot_availability.dart';
-import '../data/demo_data.dart';
+import '../data/backend.dart';
 import '../models.dart';
 
+/// The single view the screens have of the clinic: what the patient booked,
+/// what the server says is available, and the preferences this handset keeps.
+///
+/// Data comes from [Backend] — server first, local cache second. Only the
+/// appearance settings live in SharedPreferences now; nothing about a patient
+/// is invented or stored unencrypted on the phone.
 class AppState extends ChangeNotifier {
-  AppState._(this._prefs);
+  AppState._(this._prefs, this.data);
 
   final SharedPreferences _prefs;
+  /// The clinic's server, or an in-memory stand-in while testing.
+  final ClinicData data;
 
-  static const _kSeeded = 'seeded_v1';
   static const _kOnboarded = 'onboarded_v1';
-  static const _kProfile = 'profile_v1';
-  static const _kAppointments = 'appointments_v1';
-  static const _kNotifications = 'notifications_v1';
   static const _kThemeMode = 'theme_mode_v1';
   static const _kLanguage = 'language_v1';
   static const _kDatePrimary = 'date_primary_v1';
@@ -28,10 +32,30 @@ class AppState extends ChangeNotifier {
   static const _kNepaliHeadingFont = 'nepali_heading_font_v1';
   static const _kNepaliBodyFont = 'nepali_body_font_v1';
   static const _kEnglishFont = 'english_font_v1';
-  static const _kSignedIn = 'signed_in_v1';
   static const _kTabOrder = 'tab_order_v1';
 
-  late PatientProfile profile;
+  /// Keys the demo builds used to hold invented patient records. Removed on
+  /// first launch of this version so an upgrade cannot leave a fake history,
+  /// or a fake signed-in state, behind.
+  static const _retiredKeys = [
+    'seeded_v1',
+    'profile_v1',
+    'appointments_v1',
+    'notifications_v1',
+    'signed_in_v1',
+  ];
+
+  static const _emptyProfile = PatientProfile(
+    name: '',
+    phone: '',
+    age: '',
+    gender: '',
+    bloodGroup: '',
+    address: '',
+    patientId: '',
+  );
+
+  PatientProfile profile = _emptyProfile;
   List<Appointment> appointments = [];
   List<AppNotification> notifications = [];
   ThemeMode themeMode = ThemeMode.system;
@@ -42,10 +66,16 @@ class AppState extends ChangeNotifier {
   NepaliFont nepaliBodyFont = NepaliFont.mukta;
   EnglishFont englishFont = EnglishFont.poppins;
   bool onboarded = false;
-  bool signedIn = false;
 
   /// Bottom-bar tab ids in display order (see RootShell for the id mapping).
   List<int> tabOrder = const [0, 4, 1, 2, 3];
+
+  bool refreshing = false;
+
+  /// The last read or write could not reach the clinic's server.
+  bool offline = false;
+
+  bool get signedIn => data.signedIn;
 
   AppFonts get fonts => AppFonts(
     nepaliHeading: nepaliHeadingFont,
@@ -53,32 +83,20 @@ class AppState extends ChangeNotifier {
     english: englishFont,
   );
 
-  static Future<AppState> load() async {
+  /// [data] lets a test drive the same state machine without a server.
+  static Future<AppState> load({ClinicData? data}) async {
     final prefs = await SharedPreferences.getInstance();
-    final state = AppState._(prefs);
-    state._restore();
+    final state = AppState._(prefs, data ?? await Backend.open());
+    state._restoreSettings();
+    await state._dropRetiredKeys();
+
+    // Whatever the phone already has renders before the network answers, so a
+    // slow link is not a blank screen.
+    await state._hydrate();
     return state;
   }
 
-  void _restore() {
-    final seeded = _prefs.getBool(_kSeeded) ?? false;
-    if (!seeded) {
-      profile = demoProfile();
-      appointments = demoAppointments();
-      notifications = demoNotifications();
-      _persistProfile();
-      _persistAppointments();
-      _persistNotifications();
-      _prefs.setBool(_kSeeded, true);
-    } else {
-      profile = _readJson(_kProfile, PatientProfile.fromJson) ?? demoProfile();
-      appointments = _readList(_kAppointments, Appointment.fromJson);
-      notifications = _readList(_kNotifications, AppNotification.fromJson);
-    }
-
-    _reanchorDemoUpcoming();
-    normalizeCompleted();
-
+  void _restoreSettings() {
     themeMode = switch (_prefs.getString(_kThemeMode)) {
       'light' => ThemeMode.light,
       'dark' => ThemeMode.dark,
@@ -111,7 +129,6 @@ class AppState extends ChangeNotifier {
       orElse: () => EnglishFont.poppins,
     );
     onboarded = _prefs.getBool(_kOnboarded) ?? false;
-    signedIn = _prefs.getBool(_kSignedIn) ?? false;
     tabOrder = _restoreTabOrder();
     if (!onboarded && themeMode == ThemeMode.system) {
       themeMode = ThemeMode.light;
@@ -119,29 +136,44 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  T? _readJson<T>(String key, T Function(Map<String, dynamic>) parse) {
-    final raw = _prefs.getString(key);
-    if (raw == null) return null;
-    try {
-      return parse(jsonDecode(raw) as Map<String, dynamic>);
-    } catch (error) {
-      debugPrint('AppState: corrupt "$key" ($error); backing up raw value.');
-      _prefs.setString('${key}_corrupt', raw);
-      return null;
+  Future<void> _dropRetiredKeys() async {
+    for (final key in _retiredKeys) {
+      await _prefs.remove(key);
     }
   }
 
-  List<T> _readList<T>(String key, T Function(Map<String, dynamic>) parse) {
-    final raw = _prefs.getString(key);
-    if (raw == null) return [];
+  Future<void> _hydrate() async {
+    if (await data.restoreSession()) {
+      profile = data.profile();
+      appointments = await data.myAppointments();
+      notifications = await data.notificationsFeed();
+      await data.listen(_onRealtimeChange);
+    }
+    offline = !(await data.syncCatalog());
+    normalizeCompleted();
+    notifyListeners();
+  }
+
+  /// Pulls everything this patient and this clinic can see. Runs on open, on
+  /// pull-to-refresh, and whenever the realtime stream reports a change.
+  Future<void> refresh() async {
+    if (refreshing) return;
+    refreshing = true;
+    notifyListeners();
     try {
-      return (jsonDecode(raw) as List)
-          .map((entry) => parse(entry as Map<String, dynamic>))
-          .toList();
-    } catch (error) {
-      debugPrint('AppState: corrupt "$key" ($error); backing up raw value.');
-      _prefs.setString('${key}_corrupt', raw);
-      return [];
+      offline = !(await data.syncCatalog());
+      if (data.signedIn) {
+        profile = data.profile();
+        appointments = await data.myAppointments();
+        notifications = await data.notificationsFeed();
+      } else {
+        appointments = const [];
+        notifications = const [];
+      }
+      normalizeCompleted();
+    } finally {
+      refreshing = false;
+      notifyListeners();
     }
   }
 
@@ -168,130 +200,75 @@ class AppState extends ChangeNotifier {
     return list;
   }
 
-  /// Books a specialist visit for a date only (no time slot). Returns null when
-  /// the date is no longer bookable or the same doctor is already booked then.
-  Appointment? bookAppointment({
+  /// Books a specialist visit for a date. The server decides whether that date
+  /// is bookable and what it costs, so a failure always carries a reason the
+  /// screen can phrase in the patient's language.
+  Future<BookingResult> bookAppointment({
     required Department department,
-    Doctor? doctor,
+    required Doctor? doctor,
     required DateTime date,
     required String patientName,
     required String phone,
-  }) {
-    final now = DateTime.now();
-    final day = dateOnly(date);
-    if (doctor != null) {
-      if (!isDateBookable(doctor: doctor, date: day, now: now)) return null;
-      if (hasBookingOn(
-        appointments: appointments,
-        doctorId: doctor.id,
-        date: day,
-      )) {
-        return null;
-      }
+  }) async {
+    // A local pre-check avoids a round trip for an obvious clash, but it is
+    // only a courtesy: the server holds the whole register, not this handset.
+    if (doctor != null &&
+        hasBookingOn(
+          appointments: appointments,
+          doctorId: doctor.id,
+          date: date,
+        )) {
+      return const BookingResult.failure(BookingFailure.alreadyBooked);
     }
-    final appointment = Appointment(
-      id: 'apt-${now.microsecondsSinceEpoch}',
-      departmentId: department.id,
-      departmentName: department.displayName,
-      doctorId: doctor?.id,
-      doctorName: doctor?.displayName ?? kClinicServiceDisplayName,
-      date: day,
-      slot: doctor?.startTime ?? '09:00',
-      patientName: patientName.trim(),
-      phone: phone.trim(),
-      fee: doctor?.fee ?? 0,
-      status: AppointmentStatus.booked,
-      createdAt: now,
+
+    final result = await data.book(
+      department: department,
+      doctor: doctor,
+      date: date,
+      patientName: patientName,
+      phone: phone,
     );
 
-    final np = const L10n(AppLanguage.np);
-    final en = const L10n(AppLanguage.en);
-    appointments = [...appointments, appointment];
-    notifications = [
-      AppNotification(
-        id: 'notif-${now.microsecondsSinceEpoch}',
-        title: np.appointmentConfirmedTitle,
-        body: np.appointmentConfirmedBody(appointment.date, department.nameNp),
-        titleEn: en.appointmentConfirmedTitle,
-        bodyEn: en.appointmentConfirmedBody(
-          appointment.date,
-          department.nameEn,
-        ),
-        time: now,
-        kind: 'appointment',
-        refId: appointment.id,
-      ),
-      ...notifications,
-    ];
-
-    _persistAppointments();
-    _persistNotifications();
+    if (result.ok) {
+      appointments = [...appointments, result.appointment!];
+      notifications = await data.notificationsFeed();
+      offline = false;
+    } else {
+      offline = result.failure == BookingFailure.offline;
+    }
     notifyListeners();
-    return appointment;
+    return result;
   }
 
-  void cancelAppointment(String id) {
-    final index = appointments.indexWhere(
-      (appointment) => appointment.id == id,
-    );
-    if (index == -1) return;
-    if (appointments[index].status != AppointmentStatus.booked) return;
-    appointments = List.of(appointments)
-      ..[index] = appointments[index].copyWith(
+  Future<bool> cancelAppointment(String id) async {
+    if (!await data.cancel(id)) {
+      offline = true;
+      return false;
+    }
+    _replace(
+      id,
+      (appointment) => appointment.copyWith(
         status: AppointmentStatus.cancelled,
-      );
-    _persistAppointments();
-    notifyListeners();
-  }
-
-  bool rescheduleAppointment(String id, {required DateTime date}) {
-    final index = appointments.indexWhere(
-      (appointment) => appointment.id == id,
-    );
-    if (index == -1) return false;
-    final current = appointments[index];
-    if (current.status != AppointmentStatus.booked) return false;
-    final day = dateOnly(date);
-    final doctor = doctorById(current.doctorId);
-    if (doctor != null && !isDateBookable(doctor: doctor, date: day)) {
-      return false;
-    }
-    if (hasBookingOn(
-      appointments: appointments,
-      doctorId: current.doctorId,
-      date: day,
-      excludingAppointmentId: id,
-    )) {
-      return false;
-    }
-    final now = DateTime.now();
-    final updated = current.copyWith(date: day);
-    appointments = List.of(appointments)..[index] = updated;
-    final np = const L10n(AppLanguage.np);
-    final en = const L10n(AppLanguage.en);
-    notifications = [
-      AppNotification(
-        id: 'notif-${now.microsecondsSinceEpoch}',
-        title: np.appointmentRescheduledTitle,
-        body: np.appointmentRescheduledBody(updated.date),
-        titleEn: en.appointmentRescheduledTitle,
-        bodyEn: en.appointmentRescheduledBody(updated.date),
-        time: now,
-        kind: 'appointment',
-        refId: id,
       ),
-      ...notifications,
-    ];
-    _persistAppointments();
-    _persistNotifications();
+    );
+    notifications = await data.notificationsFeed();
     notifyListeners();
     return true;
   }
 
-  bool restoreAppointment(String id) {
-    final index = appointments.indexWhere(
-      (appointment) => appointment.id == id,
-    );
+  Future<bool> rescheduleAppointment(String id, {required DateTime date}) async {
+    if (!await data.moveTo(id, date)) {
+      offline = true;
+      return false;
+    }
+    _replace(id, (appointment) => appointment.copyWith(date: dateOnly(date)));
+    notifications = await data.notificationsFeed();
+    notifyListeners();
+    return true;
+  }
+
+  Future<bool> restoreAppointment(String id) async {
+    final index = appointments.indexWhere((appointment) => appointment.id == id);
     if (index == -1) return false;
     final current = appointments[index];
     if (current.status != AppointmentStatus.cancelled) return false;
@@ -304,15 +281,27 @@ class AppState extends ChangeNotifier {
     )) {
       return false;
     }
-    appointments = List.of(appointments)
-      ..[index] = current.copyWith(status: AppointmentStatus.booked);
-    _persistAppointments();
+    if (!await data.reopen(id)) {
+      offline = true;
+      return false;
+    }
+    _replace(
+      id,
+      (appointment) => appointment.copyWith(status: AppointmentStatus.booked),
+    );
     notifyListeners();
     return true;
   }
 
-  /// Persists "completed" for booked appointments whose day has passed.
-  /// Called on restore and from the shell's minute ticker — never in a getter.
+  void _replace(String id, Appointment Function(Appointment) update) {
+    final index = appointments.indexWhere((item) => item.id == id);
+    if (index == -1) return;
+    appointments = List.of(appointments)..[index] = update(appointments[index]);
+  }
+
+  /// A past booking reads as history rather than as something still owed. The
+  /// server's nightly job is the authority; this only keeps the display honest
+  /// when the day turns over while the app is open.
   void normalizeCompleted() {
     final today = dateOnly(DateTime.now());
     var changed = false;
@@ -324,84 +313,101 @@ class AppState extends ChangeNotifier {
       }
       return appointment;
     }).toList();
-    if (!changed) return;
-    appointments = next;
-    _persistAppointments();
-    notifyListeners();
+    if (changed) appointments = next;
   }
 
-  /// Keeps the seeded demo "upcoming" appointment in the future so the demo
-  /// does not silently drift into the past. Never touches user-created records.
-  void _reanchorDemoUpcoming() {
-    final index = appointments.indexWhere(
-      (appointment) => appointment.id == 'demo-upcoming',
-    );
-    if (index == -1) return;
-    final demo = appointments[index];
-    if (demo.status != AppointmentStatus.booked) return;
-    final today = dateOnly(DateTime.now());
-    if (!dateOnly(demo.date).isBefore(today)) return;
-
-    final newDate = nextSaturdayForGroup(SaturdayGroup.second);
-    appointments = List.of(appointments)
-      ..[index] = demo.copyWith(date: newDate);
-
-    final nIndex = notifications.indexWhere(
-      (notification) => notification.id == 'notif-appointment',
-    );
-    if (nIndex != -1) {
-      final old = notifications[nIndex];
-      final np = const L10n(AppLanguage.np);
-      final en = const L10n(AppLanguage.en);
-      final sunita = doctorById('sunita');
-      notifications = List.of(notifications)
-        ..[nIndex] = AppNotification(
-          id: old.id,
-          title: old.title,
-          body: np.appointmentReminderBody(
-            newDate,
-            sunita?.name(AppLanguage.np) ?? '',
-          ),
-          titleEn: old.titleEn,
-          bodyEn: en.appointmentReminderBody(
-            newDate,
-            sunita?.name(AppLanguage.en) ?? '',
-          ),
-          time: DateTime.now().subtract(const Duration(hours: 2)),
-          kind: old.kind,
-          read: old.read,
-          refId: 'demo-upcoming',
-        );
-      _persistNotifications();
-    }
-    _persistAppointments();
-  }
-
-  void markNotificationRead(String id) {
+  Future<void> markNotificationRead(String id) async {
     final index = notifications.indexWhere(
       (notification) => notification.id == id,
     );
     if (index == -1 || notifications[index].read) return;
+    final wasNotice = notifications[index].kind == 'notice';
     notifications = List.of(notifications)
       ..[index] = notifications[index].copyWith(read: true);
-    _persistNotifications();
     notifyListeners();
+
+    if (wasNotice) {
+      await data.saveReadNoticeKeys(
+        notifications
+            .where((item) => item.kind == 'notice' && item.read)
+            .map((item) => item.refId ?? '')
+            .where((key) => key.isNotEmpty)
+            .toList(),
+      );
+    } else {
+      await data.markEventRead(id);
+    }
   }
 
-  void markAllNotificationsRead() {
+  Future<void> markAllNotificationsRead() async {
     if (unreadCount == 0) return;
     notifications = notifications
         .map((notification) => notification.copyWith(read: true))
         .toList();
-    _persistNotifications();
+    notifyListeners();
+    await data.markNoticesRead();
+    for (final notification in notifications.where(
+      (item) => item.kind != 'notice',
+    )) {
+      await data.markEventRead(notification.id);
+    }
+  }
+
+  Future<void> updateProfile(PatientProfile updated) async {
+    profile = updated;
+    notifyListeners();
+    if (await data.saveProfile(updated)) {
+      profile = data.profile();
+      notifyListeners();
+    } else {
+      offline = true;
+    }
+  }
+
+  // ------------------------------------------------------------------- auth
+
+  Future<void> signIn(String identifier, String password) async {
+    await data.signIn(identifier, password);
+    profile = data.profile();
+    await refresh();
+    await data.listen(_onRealtimeChange);
+  }
+
+  Future<void> signUp({
+    required String name,
+    required String phone,
+    required String password,
+    String email = '',
+    String gender = '',
+    String bloodGroup = '',
+    String address = '',
+    String age = '',
+  }) => data.signUp(
+    name: name,
+    phone: phone,
+    password: password,
+    email: email,
+    gender: gender,
+    bloodGroup: bloodGroup,
+    address: address,
+    age: age,
+  );
+
+  Future<void> requestPasswordReset(String email) =>
+      data.requestPasswordReset(email);
+
+  Future<void> signOut() async {
+    await data.stopListening();
+    await data.signOut();
+    profile = _emptyProfile;
+    appointments = const [];
+    notifications = const [];
     notifyListeners();
   }
 
-  void updateProfile(PatientProfile updated) {
-    profile = updated;
-    _persistProfile();
-    notifyListeners();
-  }
+  Future<void> _onRealtimeChange() => refresh();
+
+  // -------------------------------------------------------------- preference
 
   void setThemeMode(ThemeMode mode) {
     if (themeMode == mode) return;
@@ -459,23 +465,8 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Demo-only auth: any credentials are accepted; real auth arrives later.
-  void signIn() {
-    if (signedIn) return;
-    signedIn = true;
-    _prefs.setBool(_kSignedIn, true);
-    notifyListeners();
-  }
+  // -------------------------------------------------------------- tab order
 
-  void signOut() {
-    if (!signedIn) return;
-    signedIn = false;
-    _prefs.setBool(_kSignedIn, false);
-    notifyListeners();
-  }
-
-  // Bottom-bar tab order (0 home, 1 appointments, 2 records, 3 profile,
-  // 4 calendar). Defaults to calendar second; reorderable from settings.
   static const _defaultTabOrder = [0, 4, 1, 2, 3];
 
   List<int> _restoreTabOrder() {
@@ -487,7 +478,8 @@ class AppState extends ChangeNotifier {
           {...order}.length == 5 &&
           order.every(_defaultTabOrder.contains);
       return valid ? order : List.of(_defaultTabOrder);
-    } catch (_) {
+    } catch (error) {
+      debugPrint('AppState: unreadable tab order ($error); using defaults.');
       return List.of(_defaultTabOrder);
     }
   }
@@ -499,26 +491,4 @@ class AppState extends ChangeNotifier {
   }
 
   void resetTabOrder() => setTabOrder(_defaultTabOrder);
-
-  void _persistProfile() {
-    _prefs.setString(_kProfile, jsonEncode(profile.toJson()));
-  }
-
-  void _persistAppointments() {
-    _prefs.setString(
-      _kAppointments,
-      jsonEncode(
-        appointments.map((appointment) => appointment.toJson()).toList(),
-      ),
-    );
-  }
-
-  void _persistNotifications() {
-    _prefs.setString(
-      _kNotifications,
-      jsonEncode(
-        notifications.map((notification) => notification.toJson()).toList(),
-      ),
-    );
-  }
 }

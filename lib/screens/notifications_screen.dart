@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../core/l10n.dart';
 import '../core/tokens.dart';
-import '../data/demo_data.dart';
+import '../data/catalog.dart';
 import '../models.dart';
 import '../state/app_state.dart';
 import '../widgets/app_refresh.dart';
@@ -50,7 +50,6 @@ class NotificationsScreen extends StatelessWidget {
       ),
       body: notifications.isEmpty
           ? AppRefreshEmpty(
-              onRefresh: demoRefresh,
               child: EmptyState(
                 icon: CoolIcons.bellSimple,
                 title: l10n.noNotificationsTitle,
@@ -58,7 +57,6 @@ class NotificationsScreen extends StatelessWidget {
               ),
             )
           : AppRefreshView(
-              onRefresh: demoRefresh,
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.fromLTRB(
@@ -133,11 +131,17 @@ class NotificationsScreen extends StatelessWidget {
           ),
         );
       default:
-        final notice = notices.firstWhere(
-          (n) => n.id == refId,
-          orElse: () => notices.first,
-        );
-        openNotice(context, notice);
+        // Open exactly the notice this notification points at. Falling back to
+        // an unrelated one is misleading, and would throw when the list is
+        // empty.
+        if (refId != null) {
+          for (final notice in notices) {
+            if (notice.id == refId) {
+              openNotice(context, notice);
+              return;
+            }
+          }
+        }
     }
   }
 }

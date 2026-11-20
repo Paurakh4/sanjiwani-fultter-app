@@ -35,7 +35,6 @@ class RecordsScreen extends StatelessWidget {
           ),
           Expanded(
             child: AppRefreshEmpty(
-              onRefresh: demoRefresh,
               child: EmptyState(
                 icon: CoolIcons.fileText,
                 title: l10n.reportsComingTitle,

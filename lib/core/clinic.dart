@@ -34,8 +34,6 @@ abstract final class Clinic {
   static String address(AppLanguage language) =>
       language == AppLanguage.en ? addressEn : addressNp;
 
-  static int closeHourFor(DateTime date) => closeHour;
-
   static bool isOpenAt(DateTime date) =>
-      date.hour >= openHour && date.hour < closeHourFor(date);
+      date.hour >= openHour && date.hour < closeHour;
 }

@@ -4,7 +4,7 @@ import '../core/icons.dart';
 
 import '../core/l10n.dart';
 import '../core/tokens.dart';
-import '../data/demo_data.dart';
+import '../data/catalog.dart';
 import '../models.dart';
 import '../widgets/app_refresh.dart';
 import '../widgets/app_search_field.dart';
@@ -222,7 +222,6 @@ class _ServicesScreenState extends State<ServicesScreen> {
         Expanded(
           child: filtered.isEmpty
               ? AppRefreshEmpty(
-                  onRefresh: demoRefresh,
                   child: EmptyState(
                     icon: CoolIcons.stethoscope,
                     title: query.isNotEmpty
@@ -234,7 +233,6 @@ class _ServicesScreenState extends State<ServicesScreen> {
                   ),
                 )
               : AppRefreshView(
-                  onRefresh: demoRefresh,
                   child: ListView.separated(
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.fromLTRB(
@@ -287,7 +285,6 @@ class _ServicesScreenState extends State<ServicesScreen> {
         Expanded(
           child: filtered.isEmpty
               ? AppRefreshEmpty(
-                  onRefresh: demoRefresh,
                   child: EmptyState(
                     icon: CoolIcons.folderOpen,
                     title: l10n.noResultsTitle,
@@ -295,7 +292,6 @@ class _ServicesScreenState extends State<ServicesScreen> {
                   ),
                 )
               : AppRefreshView(
-                  onRefresh: demoRefresh,
                   child: ListView.separated(
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.fromLTRB(
